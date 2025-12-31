@@ -50,11 +50,11 @@ All hardcoded `http://localhost:5000` URLs replaced with environment-based confi
 PORT=5000                    # Auto-set by Render
 MONGO_URI=...                # MongoDB connection string
 JWT_SECRET=...               # Strong random string
-CORS_ORIGIN=...              # Frontend URL (Vercel)
+CORS_ORIGIN=...              # Frontend URL (Render)
 NODE_ENV=production
 ```
 
-### Frontend (Vercel)
+### Frontend (Render Static Site)
 ```env
 VITE_API_URL=...             # Backend URL (Render)
 ```
@@ -70,17 +70,17 @@ VITE_API_URL=...             # Backend URL (Render)
 ## Deployment Ready
 
 The application is now ready for production deployment on:
-- **Backend**: Render (or similar Node.js hosting)
-- **Frontend**: Vercel (or similar static hosting)
+- **Backend**: Render Web Service
+- **Frontend**: Render Static Site
 
 All hardcoded URLs removed, test features removed, and environment configuration properly set up.
 
 ## Next Steps
 
 1. Set up MongoDB Atlas database
-2. Deploy backend to Render
-3. Deploy frontend to Vercel
-4. Configure environment variables in both platforms
+2. Deploy backend to Render (Web Service)
+3. Deploy frontend to Render (Static Site)
+4. Configure environment variables in both services
 5. Create admin account using server script
 6. Test end-to-end functionality
 

@@ -1,0 +1,31 @@
+# Render Blueprint Configuration
+# This file helps configure both services for deployment on Render
+
+services:
+  # Backend Web Service
+  - type: web
+    name: enactus-backend
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false  # Set this manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false  # Set this manually in Render dashboard
+      - key: CORS_ORIGIN
+        sync: false  # Set this after frontend deployment
+
+  # Frontend Static Site
+  - type: static
+    name: enactus-frontend
+    rootDir: client
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false  # Set this to your backend URL
+

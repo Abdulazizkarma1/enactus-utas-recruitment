@@ -53,14 +53,15 @@ Use this checklist to ensure your application is ready for production deployment
 - [ ] Service deployed successfully
 - [ ] Health check endpoint working
 
-### Frontend (Vercel)
+### Frontend (Render Static Site)
 - [ ] Repository connected
 - [ ] Root directory set to `client`
-- [ ] Framework preset: Vite
-- [ ] Build command: `npm run build`
-- [ ] Output directory: `dist`
+- [ ] Build command: `npm install && npm run build`
+- [ ] Publish directory: `dist`
+- [ ] Node version specified (18 or 20)
 - [ ] Environment variables set:
   - [ ] `VITE_API_URL`
+- [ ] `_redirects` file created in `client/public/`
 - [ ] Deployment successful
 - [ ] Custom domain configured (if applicable)
 
@@ -99,7 +100,7 @@ Use this checklist to ensure your application is ready for production deployment
 
 - [ ] All `.env` files in `.gitignore`
 - [ ] No credentials in version control
-- [ ] HTTPS enabled (automatic on Render/Vercel)
+- [ ] HTTPS enabled (automatic on Render)
 - [ ] Strong JWT secret in use
 - [ ] MongoDB connection secured
 - [ ] CORS origin restricted to frontend domain
