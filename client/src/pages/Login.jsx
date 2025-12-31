@@ -33,9 +33,22 @@ export default function Login() {
         navigate('/dashboard');
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.msg || 'Error logging in';
+      console.error('Login error:', err);
+      let errorMsg = 'Error logging in';
+      
+      if (err.response) {
+        // Server responded with error
+        errorMsg = err.response.data?.msg || `Server error: ${err.response.status}`;
+      } else if (err.request) {
+        // Request made but no response
+        errorMsg = 'Cannot connect to server. Please check your connection and try again.';
+        console.error('API URL:', API_URL);
+      } else {
+        // Something else happened
+        errorMsg = err.message || 'An unexpected error occurred';
+      }
+      
       alert(errorMsg);
-      console.error('Login error:', err.response?.data || err.message);
     } finally {
       setIsLoading(false);
     }
