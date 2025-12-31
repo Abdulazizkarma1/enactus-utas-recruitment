@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import API_URL from '../config/api';
 
 export default function Login() {
@@ -102,9 +102,9 @@ export default function Login() {
               <div className="text-center">
                 <small>
                   Don't have an account?{' '}
-                  <a href="/register" style={{color: '#800000', textDecoration: 'none'}}>
+                  <Link to="/register" style={{color: '#800000', textDecoration: 'none'}}>
                     Register here
-                  </a>
+                  </Link>
                 </small>
               </div>
             </form>

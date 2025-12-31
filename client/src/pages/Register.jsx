@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import API_URL from '../config/api';
 
 export default function Register() {
@@ -68,9 +68,9 @@ export default function Register() {
         <div className="text-center mt-3">
           <small>
             Already have an account?{' '}
-            <a href="/" style={{color: '#800000', textDecoration: 'none'}}>
+            <Link to="/" style={{color: '#800000', textDecoration: 'none'}}>
               Login here
-            </a>
+            </Link>
           </small>
         </div>
       </form>
