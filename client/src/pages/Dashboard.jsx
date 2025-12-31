@@ -45,6 +45,16 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
+      // Ensure status remains 'draft' or 'New' to keep form editable
+      if (status !== 'draft' && status !== 'New') {
+        setStatus('draft');
+      }
+      
+      // Update application state if it doesn't exist yet
+      if (!application) {
+        setApplication({ status: 'draft' });
+      }
+      
       setLastSaved(new Date());
     } catch (err) {
       console.error('Auto-save error:', err);
@@ -298,8 +308,9 @@ export default function Dashboard() {
     );
   }
 
-  // If application is submitted, show dashboard view
-  if (application && status !== 'New' && status !== 'draft') {
+  // If application is submitted, show dashboard view (only for submitted/recruited/declined statuses)
+  // Keep form editable for 'New' and 'draft' statuses
+  if (application && (status === 'submitted' || status === 'recruited' || status === 'declined' || status === 'interview')) {
     const statusBadge = getStatusBadge(status);
     
     return (
