@@ -64,10 +64,10 @@ VITE_API_URL=https://your-backend-service.onrender.com
 
 2. **Configure Static Site**
    - **Name**: `enactus-frontend` (or your preferred name)
-   - **Root Directory**: `client`
-   - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `dist`
-   - **Node Version**: `18` or `20` (specify in package.json or Render settings)
+   - **Root Directory**: `client` (exactly this, no slash, no path)
+   - **Build Command**: `npm ci && npm run build` (or `npm install && npm run build`)
+   - **Publish Directory**: `dist` (exactly this, lowercase, no slash)
+   - **Node Version**: `18` (explicitly set in Render settings)
 
 3. **Set Environment Variables**
    - Add `VITE_API_URL` with your Render backend URL

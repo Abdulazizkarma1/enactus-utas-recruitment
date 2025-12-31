@@ -30,8 +30,9 @@ This is a quick reference guide for deploying both services to Render.
 3. Configure:
    - **Name**: `enactus-frontend`
    - **Root Directory**: `client`
-   - **Build Command**: `npm install && npm run build`
+   - **Build Command**: `npm ci && npm run build`
    - **Publish Directory**: `dist`
+   - **Node Version**: `18` (explicitly set this)
 4. Set Environment Variable:
    ```
    VITE_API_URL=https://enactus-backend.onrender.com

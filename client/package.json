@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "ls -la dist || echo 'Build directory check'",
     "lint": "eslint .",
     "preview": "vite preview"
   },
