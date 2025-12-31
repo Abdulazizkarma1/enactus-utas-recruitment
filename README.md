@@ -117,7 +117,11 @@ npm run dev
 
 ## Deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions for Render (both backend and frontend).
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions:
+- **Backend**: Render (Web Service)
+- **Frontend**: Vercel (Static Site)
+
+Quick start: See [VERCEL_DEPLOYMENT_QUICKSTART.md](./VERCEL_DEPLOYMENT_QUICKSTART.md)
 
 ## Environment Variables
 

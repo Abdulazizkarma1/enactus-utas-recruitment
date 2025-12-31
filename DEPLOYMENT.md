@@ -1,11 +1,12 @@
-# Deployment Guide - Render
+# Deployment Guide - Render (Backend) + Vercel (Frontend)
 
-This guide will help you deploy the Enactus UTAS Recruitment application to production on Render.
+This guide will help you deploy the Enactus UTAS Recruitment application to production.
 
 ## Prerequisites
 
 - MongoDB Atlas account (or MongoDB instance)
-- Render account
+- Render account (for backend)
+- Vercel account (for frontend)
 - Git repository
 
 ## Environment Variables
@@ -19,12 +20,12 @@ PORT=5000                    # Auto-set by Render, but can specify
 NODE_ENV=production
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_strong_random_jwt_secret
-CORS_ORIGIN=https://your-frontend-service.onrender.com
+CORS_ORIGIN=https://your-frontend-domain.vercel.app
 ```
 
-### Frontend (Client) - Render Static Site
+### Frontend (Client) - Vercel
 
-Set environment variables in Render dashboard:
+Set environment variables in Vercel dashboard:
 
 ```env
 VITE_API_URL=https://your-backend-service.onrender.com
@@ -48,41 +49,44 @@ VITE_API_URL=https://your-backend-service.onrender.com
 3. **Set Environment Variables**
    - Add all environment variables from the Backend section above
    - Make sure `MONGO_URI` and `JWT_SECRET` are set correctly
-   - **Important**: Set `CORS_ORIGIN` to your frontend Render URL (you'll update this after frontend deployment)
+   - **Important**: Set `CORS_ORIGIN` to your Vercel frontend URL (you'll update this after frontend deployment)
 
 4. **Deploy**
    - Click "Create Web Service"
    - Wait for deployment to complete
    - Note the service URL (e.g., `https://enactus-backend.onrender.com`)
 
-## Frontend Deployment (Render Static Site)
+## Frontend Deployment (Vercel)
 
 1. **Connect Repository**
-   - Go to Render dashboard
-   - Click "New" → "Static Site"
-   - Connect your GitHub repository
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Click "Add New" → "Project"
+   - Import your GitHub repository
 
-2. **Configure Static Site**
-   - **Name**: `enactus-frontend` (or your preferred name)
-   - **Root Directory**: `client` (exactly this, no slash, no path)
-   - **Build Command**: `npm ci && npm run build` (or `npm install && npm run build`)
-   - **Publish Directory**: `dist` (exactly this, lowercase, no slash)
-   - **Node Version**: `18` (explicitly set in Render settings)
+2. **Configure Project**
+   - **Framework Preset**: Vite (should auto-detect)
+   - **Root Directory**: `client` (IMPORTANT: Set this explicitly)
+   - **Build Command**: `npm run build` (Vercel will use this automatically)
+   - **Output Directory**: `dist` (Vercel will use this automatically)
+   - **Install Command**: `npm install` (default)
 
 3. **Set Environment Variables**
-   - Add `VITE_API_URL` with your Render backend URL
-   - Example: `VITE_API_URL=https://enactus-backend.onrender.com`
-   - **Important**: Environment variables must be set before the first build
+   - Click "Environment Variables" section
+   - Add:
+     - **Key**: `VITE_API_URL`
+     - **Value**: Your Render backend URL (e.g., `https://enactus-backend.onrender.com`)
+   - **Important**: Set this BEFORE deploying
 
 4. **Deploy**
-   - Click "Create Static Site"
+   - Click "Deploy"
    - Wait for build and deployment to complete
-   - Your app will be live at `https://your-frontend-service.onrender.com`
+   - Your app will be live at `https://your-project.vercel.app`
 
 5. **Update Backend CORS**
-   - Go back to your backend service settings
-   - Update `CORS_ORIGIN` environment variable to match your frontend URL
-   - Redeploy the backend service
+   - Go back to your Render backend service settings
+   - Update `CORS_ORIGIN` environment variable to match your Vercel frontend URL
+   - Example: `https://your-project.vercel.app`
+   - Save changes (this will trigger a redeploy)
 
 ## Post-Deployment Steps
 
@@ -116,11 +120,11 @@ Manually create an admin user in MongoDB with:
 
 ### 2. Verify CORS Configuration
 
-Ensure `CORS_ORIGIN` in backend matches your frontend URL exactly (including `https://`)
+Ensure `CORS_ORIGIN` in backend matches your Vercel frontend URL exactly (including `https://`)
 
 ### 3. Test the Application
 
-1. Visit your Render frontend URL
+1. Visit your Vercel frontend URL
 2. Test registration with a voucher
 3. Test login functionality
 4. Test application submission
@@ -134,25 +138,26 @@ Ensure `CORS_ORIGIN` in backend matches your frontend URL exactly (including `ht
 - **MongoDB Atlas** is recommended for production database
 - **File uploads** are stored in `server/uploads/` - ensure this directory exists
 - **CORS** must be configured correctly for frontend-backend communication
-- **Render Free Tier**: Services may spin down after inactivity. First request may be slow.
+- **Vercel** automatically handles routing for React Router
 - **Environment Variables**: Must be set before building frontend (Vite bakes them into build)
 
-## Render-Specific Considerations
+## Vercel-Specific Considerations
 
-### Free Tier Limitations
-- Services may spin down after 15 minutes of inactivity
-- First request after spin-down may take 30-60 seconds
-- Consider upgrading to paid plan for production use
+### Automatic Configuration
+- Vercel auto-detects Vite projects
+- Automatically configures build and output directories
+- Handles React Router routing automatically
+- No need for `_redirects` file (Vercel handles it)
 
-### Build Configuration
-- Frontend builds on Render's servers
-- Environment variables are available during build
-- Build artifacts are served as static files
+### Environment Variables
+- Set in Vercel Dashboard → Project → Settings → Environment Variables
+- Available during build time (important for Vite)
+- Can set for Production, Preview, and Development separately
 
-### Backend Configuration
-- Render automatically sets `PORT` environment variable
-- Don't hardcode port numbers
-- Health checks are automatic
+### Custom Domain
+- Vercel allows custom domains
+- Free SSL certificates
+- Easy DNS configuration
 
 ## Troubleshooting
 
@@ -164,9 +169,10 @@ Ensure `CORS_ORIGIN` in backend matches your frontend URL exactly (including `ht
   - Check MongoDB connection string format
 
 - **CORS Errors**: 
-  - Verify `CORS_ORIGIN` matches your frontend URL exactly
+  - Verify `CORS_ORIGIN` matches your Vercel frontend URL exactly
   - Include `https://` protocol
   - No trailing slash
+  - Example: `https://your-project.vercel.app`
 
 - **Port Issues**: 
   - Render automatically sets `PORT`, don't hardcode it
@@ -180,33 +186,27 @@ Ensure `CORS_ORIGIN` in backend matches your frontend URL exactly (including `ht
 ### Frontend Issues
 
 - **API Connection Errors**: 
-  - Verify `VITE_API_URL` is set correctly in Render
+  - Verify `VITE_API_URL` is set correctly in Vercel
   - Check backend service is running
   - Verify CORS is configured correctly
+  - Check browser console for specific errors
 
 - **Build Errors**: 
-  - Check Node version (specify in package.json or Render settings)
-  - Check build logs for specific errors
-  - Verify all dependencies are in package.json
+  - Check build logs in Vercel dashboard
+  - Verify Root Directory is set to `client`
+  - Check Node version compatibility
+  - Look for missing dependencies
 
 - **Environment Variables Not Working**:
   - Vite requires `VITE_` prefix
-  - Variables must be set before first build
+  - Variables must be set before build
   - Rebuild after changing environment variables
+  - Check Vercel build logs to see if variables are available
 
 - **404 Errors on Routes**:
-  - Render static sites need redirect configuration
-  - Add `_redirects` file in `client/public/` (see below)
-
-### Static Site Routing
-
-For React Router to work on Render static sites, create `client/public/_redirects`:
-
-```
-/*    /index.html   200
-```
-
-This ensures all routes are handled by React Router.
+  - Vercel handles this automatically with `vercel.json`
+  - If issues persist, check `vercel.json` configuration
+  - Ensure React Router is configured correctly
 
 ## Security Checklist
 
@@ -215,7 +215,7 @@ This ensures all routes are handled by React Router.
 - [ ] CORS origin restricted to frontend domain
 - [ ] No test/admin creation endpoints exposed
 - [ ] Environment variables not committed to git
-- [ ] HTTPS enabled (automatic on Render)
+- [ ] HTTPS enabled (automatic on Render/Vercel)
 - [ ] MongoDB Atlas IP whitelist configured
 - [ ] File upload limits enforced
 
@@ -223,5 +223,6 @@ This ensures all routes are handled by React Router.
 
 For issues or questions, refer to:
 - Render Documentation: https://render.com/docs
-- Render Static Sites: https://render.com/docs/static-sites
+- Vercel Documentation: https://vercel.com/docs
+- Vite Documentation: https://vitejs.dev
 - MongoDB Atlas: https://www.mongodb.com/cloud/atlas

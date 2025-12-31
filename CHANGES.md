@@ -71,7 +71,7 @@ VITE_API_URL=...             # Backend URL (Render)
 
 The application is now ready for production deployment on:
 - **Backend**: Render Web Service
-- **Frontend**: Render Static Site
+- **Frontend**: Vercel (Static Site)
 
 All hardcoded URLs removed, test features removed, and environment configuration properly set up.
 
@@ -79,10 +79,11 @@ All hardcoded URLs removed, test features removed, and environment configuration
 
 1. Set up MongoDB Atlas database
 2. Deploy backend to Render (Web Service)
-3. Deploy frontend to Render (Static Site)
-4. Configure environment variables in both services
+3. Deploy frontend to Vercel (Static Site)
+4. Configure environment variables in both platforms
 5. Create admin account using server script
 6. Test end-to-end functionality
 
 See `DEPLOYMENT.md` for detailed instructions.
+Quick start: See `VERCEL_DEPLOYMENT_QUICKSTART.md`
 
