@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import FormField from '../components/FormField';
 import API_URL from '../config/api';
+import { useInactivityLogout } from '../hooks/useInactivityLogout';
 
 export default function Dashboard() {
   const [step, setStep] = useState(1);
@@ -114,6 +115,11 @@ export default function Dashboard() {
         });
     }
   }, [user, navigate]);
+
+  // Auto-logout after 5 minutes of inactivity (for regular users)
+  useInactivityLogout(5, () => {
+    console.log('User logged out due to inactivity');
+  });
 
   // Validation functions
   const validateStep1 = () => {

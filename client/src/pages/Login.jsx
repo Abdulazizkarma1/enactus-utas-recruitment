@@ -26,6 +26,9 @@ export default function Login() {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       
+      // Show success message
+      alert('✅ Successfully logged in!');
+      
       // Redirect based on role
       if (res.data.user.role === 'admin') {
         navigate('/admin');
@@ -55,8 +58,8 @@ export default function Login() {
   };
 
   return (
-    <div className="container mt-3 mt-md-5 mb-5">
-      <div className="row justify-content-center">
+    <div className="container d-flex align-items-center justify-content-center" style={{minHeight: '80vh'}}>
+      <div className="row justify-content-center w-100">
         <div className="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
           <div className="card p-3 p-md-4 mx-auto" style={{borderColor: '#800000', borderWidth: '2px'}}>
             <h3 className="text-center mb-3" style={{color: '#800000', fontSize: '1.5rem'}}>Enactus Recruitment</h3>

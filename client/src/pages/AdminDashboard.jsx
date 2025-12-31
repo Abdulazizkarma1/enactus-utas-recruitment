@@ -1,13 +1,30 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
+import { useInactivityLogout } from '../hooks/useInactivityLogout';
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [applicants, setApplicants] = useState([]);
   const [vouchers, setVouchers] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [voucherAmount, setVoucherAmount] = useState(5);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Logout function
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/');
+    }
+  };
+
+  // Auto-logout after 30 minutes of inactivity (for admin)
+  useInactivityLogout(30, () => {
+    console.log('Admin logged out due to inactivity');
+  });
 
   useEffect(() => {
     const fetchApplicants = async () => {
@@ -78,7 +95,17 @@ export default function AdminDashboard() {
 
   return (
     <div className="container-fluid px-2 px-md-3">
-      <h2 className="my-3" style={{color: '#800000', fontSize: '1.5rem'}}>Admin Dashboard</h2>
+      <div className="d-flex justify-content-between align-items-center my-3">
+        <h2 className="mb-0" style={{color: '#800000', fontSize: '1.5rem'}}>Admin Dashboard</h2>
+        <button 
+          className="btn btn-outline-danger"
+          onClick={handleLogout}
+          title="Logout"
+        >
+          <i className="bi bi-box-arrow-right me-2"></i>
+          Logout
+        </button>
+      </div>
       
       {/* Voucher Management Section */}
       <div className="card mb-4 p-3 p-md-4" style={{borderColor: '#800000', borderWidth: '2px'}}>
