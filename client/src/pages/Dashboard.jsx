@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import FormField from '../components/FormField';
+import API_URL from '../config/api';
 
 export default function Dashboard() {
   const [step, setStep] = useState(1);
@@ -41,7 +42,7 @@ export default function Dashboard() {
       if (files.profilePic) formData.append('profilePic', files.profilePic);
       if (files.cv) formData.append('cv', files.cv);
 
-      await axios.post('http://localhost:5000/api/application/draft', formData, {
+      await axios.post(`${API_URL}/api/application/draft`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
@@ -79,7 +80,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if(user) {
-        axios.get(`http://localhost:5000/api/application/${user.id}`)
+        axios.get(`${API_URL}/api/application/${user.id}`)
           .then(res => {
             if(res.data) {
               setApplication(res.data);
@@ -256,7 +257,7 @@ export default function Dashboard() {
       // Show processing delay for better UX
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      await axios.post('http://localhost:5000/api/application/submit', formData, {
+      await axios.post(`${API_URL}/api/application/submit`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -347,7 +348,7 @@ export default function Dashboard() {
                   <div className="col-12 col-md-3 text-center mb-3 mb-md-0">
                     {application.profilePic ? (
                       <img 
-                        src={`http://localhost:5000/${application.profilePic}`} 
+                        src={`${API_URL}/${application.profilePic}`} 
                         alt="Profile" 
                         className="img-fluid rounded-circle"
                         style={{width: '120px', height: '120px', objectFit: 'cover', border: '3px solid #800000'}}
@@ -430,7 +431,7 @@ export default function Dashboard() {
                   <div className="d-flex gap-3">
                     {application.cv ? (
                       <a 
-                        href={`http://localhost:5000/${application.cv}`} 
+                        href={`${API_URL}/${application.cv}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="btn btn-outline-primary"

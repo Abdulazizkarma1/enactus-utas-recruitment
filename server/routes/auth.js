@@ -60,7 +60,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Login (supports both studentId and email for admin convenience)
+// Login
 router.post('/login', async (req, res) => {
     try {
         const { studentId, email, password } = req.body;
@@ -85,57 +85,5 @@ router.post('/login', async (req, res) => {
     } catch (err) { res.status(500).json(err); }
 });
 
-// Create Test Admin Account (for development/testing)
-router.post('/create-admin', async (req, res) => {
-    try {
-        const { studentId, email, password } = req.body;
-
-        // Default test admin credentials if not provided
-        const adminStudentId = studentId || 'admin001';
-        const adminEmail = email || 'admin@enactus.com';
-        const adminPassword = password || 'admin123';
-
-        // Check if admin already exists
-        const existingAdmin = await User.findOne({
-            $or: [{ studentId: adminStudentId }, { email: adminEmail }]
-        });
-
-        if (existingAdmin) {
-            // Update existing user to admin if not already
-            if (existingAdmin.role !== 'admin') {
-                existingAdmin.role = 'admin';
-                const salt = await bcrypt.genSalt(10);
-                existingAdmin.password = await bcrypt.hash(adminPassword, salt);
-                await existingAdmin.save();
-                return res.json({
-                    msg: "User updated to admin",
-                    credentials: { studentId: adminStudentId, email: adminEmail, password: adminPassword }
-                });
-            }
-            return res.json({
-                msg: "Admin already exists",
-                credentials: { studentId: adminStudentId, email: adminEmail, password: adminPassword }
-            });
-        }
-
-        // Create new admin
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(adminPassword, salt);
-        const newAdmin = new User({
-            studentId: adminStudentId,
-            email: adminEmail,
-            password: hashedPassword,
-            role: 'admin'
-        });
-        await newAdmin.save();
-
-        res.json({
-            msg: "Test admin created successfully",
-            credentials: { studentId: adminStudentId, email: adminEmail, password: adminPassword }
-        });
-    } catch (err) {
-        res.status(500).json({ msg: err.message });
-    }
-});
 
 module.exports = router;

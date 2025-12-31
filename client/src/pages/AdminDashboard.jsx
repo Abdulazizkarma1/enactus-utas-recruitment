@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_URL from '../config/api';
 
 export default function AdminDashboard() {
   const [applicants, setApplicants] = useState([]);
@@ -11,7 +12,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/admin/applicants');
+        const res = await axios.get(`${API_URL}/api/admin/applicants`);
         setApplicants(res.data);
       } catch (error) {
         console.error('Error fetching applicants:', error);
@@ -20,7 +21,7 @@ export default function AdminDashboard() {
     
     const fetchVouchers = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/admin/vouchers');
+        const res = await axios.get(`${API_URL}/api/admin/vouchers`);
         setVouchers(res.data);
       } catch (error) {
         console.error('Error fetching vouchers:', error);
@@ -39,7 +40,7 @@ export default function AdminDashboard() {
     
     setIsGenerating(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/admin/vouchers', { amount: voucherAmount });
+      const res = await axios.post(`${API_URL}/api/admin/vouchers`, { amount: voucherAmount });
       alert(`Successfully generated ${res.data.length} voucher(s)!`);
       setRefreshTrigger(prev => prev + 1); // Refresh to show new vouchers
     } catch (error) {
@@ -55,7 +56,7 @@ export default function AdminDashboard() {
     }
     
     try {
-      await axios.delete(`http://localhost:5000/api/admin/vouchers/${id}`);
+      await axios.delete(`${API_URL}/api/admin/vouchers/${id}`);
       alert('Voucher deleted successfully');
       setRefreshTrigger(prev => prev + 1); // Refresh to update list
     } catch (error) {
@@ -65,7 +66,7 @@ export default function AdminDashboard() {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`http://localhost:5000/api/admin/status/${id}`, { status });
+      await axios.put(`${API_URL}/api/admin/status/${id}`, { status });
       setRefreshTrigger(prev => prev + 1); // Refresh list
     } catch (error) {
       alert(error.response?.data?.msg || 'Error updating status');
@@ -235,7 +236,7 @@ export default function AdminDashboard() {
                     <td>
                       {app.profilePic ? (
                         <img 
-                          src={`http://localhost:5000/${app.profilePic}`} 
+                          src={`${API_URL}/${app.profilePic}`} 
                           alt="profile" 
                           width="50" 
                           height="50"
@@ -281,7 +282,7 @@ export default function AdminDashboard() {
                     <td>
                       {app.cv ? (
                         <a 
-                          href={`http://localhost:5000/${app.cv}`} 
+                          href={`${API_URL}/${app.cv}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="btn btn-sm btn-info"

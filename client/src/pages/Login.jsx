@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import API_URL from '../config/api';
 
 export default function Login() {
   const [form, setForm] = useState({ identifier: '', password: '' });
@@ -21,7 +22,7 @@ export default function Login() {
         ? { email: form.identifier.trim(), password: form.password }
         : { studentId: form.identifier.trim(), password: form.password };
       
-      const res = await axios.post('http://localhost:5000/api/auth/login', loginData);
+      const res = await axios.post(`${API_URL}/api/auth/login`, loginData);
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       
@@ -89,27 +90,6 @@ export default function Login() {
                     Register here
                   </a>
                 </small>
-              </div>
-              
-              <div className="text-center mt-3">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={async () => {
-                    try {
-                      const res = await axios.post('http://localhost:5000/api/auth/create-admin');
-                      alert(`✅ ${res.data.msg}\n\nCredentials:\nEmail: ${res.data.credentials.email}\nStudent ID: ${res.data.credentials.studentId}\nPassword: ${res.data.credentials.password}`);
-                      setForm({
-                        identifier: res.data.credentials.email,
-                        password: ''
-                      });
-                    } catch (err) {
-                      alert(err.response?.data?.msg || 'Error creating admin');
-                    }
-                  }}
-                >
-                  Create Test Admin Account
-                </button>
               </div>
             </form>
           </div>
