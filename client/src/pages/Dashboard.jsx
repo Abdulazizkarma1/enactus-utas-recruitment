@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import FormField from '../components/FormField';
@@ -21,41 +21,56 @@ export default function Dashboard() {
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const dataLoadedRef = useRef(false);
+  const saveTimeoutRef = useRef(null);
+  const appDataRef = useRef(appData);
+  const filesRef = useRef(files);
 
-  // Auto-save draft functionality
-  const saveDraft = async () => {
-    if (!user || status === 'submitted' || status === 'recruited' || status === 'declined') return;
+  // Keep refs in sync with state
+  useEffect(() => {
+    appDataRef.current = appData;
+  }, [appData]);
+
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+
+  // Auto-save draft functionality - using refs to avoid dependency issues
+  const saveDraft = useCallback(async () => {
+    const currentAppData = appDataRef.current;
+    const currentFiles = filesRef.current;
+    const currentStatus = status;
+    
+    if (!user || currentStatus === 'submitted' || currentStatus === 'recruited' || currentStatus === 'declined') return;
     
     setIsSaving(true);
     try {
       const formData = new FormData();
       formData.append('userId', user.id);
-      if (appData.fullName) formData.append('fullName', appData.fullName);
-      if (appData.hostel) formData.append('hostel', appData.hostel);
-      if (appData.department) formData.append('department', appData.department);
-      if (appData.programme) formData.append('programme', appData.programme);
-      if (appData.dob) formData.append('dob', appData.dob);
-      if (appData.phone) formData.append('phone', appData.phone);
-      if (appData.secondaryTeam) formData.append('secondaryTeam', appData.secondaryTeam);
-      if (appData.essayWhy) formData.append('essayWhy', appData.essayWhy);
-      if (appData.essaySkills) formData.append('essaySkills', appData.essaySkills);
+      if (currentAppData.fullName) formData.append('fullName', currentAppData.fullName);
+      if (currentAppData.hostel) formData.append('hostel', currentAppData.hostel);
+      if (currentAppData.department) formData.append('department', currentAppData.department);
+      if (currentAppData.programme) formData.append('programme', currentAppData.programme);
+      if (currentAppData.dob) formData.append('dob', currentAppData.dob);
+      if (currentAppData.phone) formData.append('phone', currentAppData.phone);
+      if (currentAppData.secondaryTeam) formData.append('secondaryTeam', currentAppData.secondaryTeam);
+      if (currentAppData.essayWhy) formData.append('essayWhy', currentAppData.essayWhy);
+      if (currentAppData.essaySkills) formData.append('essaySkills', currentAppData.essaySkills);
       
-      if (files.profilePic) formData.append('profilePic', files.profilePic);
-      if (files.cv) formData.append('cv', files.cv);
+      if (currentFiles.profilePic) formData.append('profilePic', currentFiles.profilePic);
+      if (currentFiles.cv) formData.append('cv', currentFiles.cv);
 
       await axios.post(`${API_URL}/api/application/draft`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
       // Ensure status remains 'draft' or 'New' to keep form editable
-      if (status !== 'draft' && status !== 'New') {
+      if (currentStatus !== 'draft' && currentStatus !== 'New') {
         setStatus('draft');
       }
       
       // Update application state if it doesn't exist yet
-      if (!application) {
-        setApplication({ status: 'draft' });
-      }
+      setApplication(prev => prev || { status: 'draft' });
       
       setLastSaved(new Date());
     } catch (err) {
@@ -63,56 +78,84 @@ export default function Dashboard() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [user, status]);
 
-  // Debounced auto-save
+  // Debounced auto-save - only triggers on actual changes, not on every render
   useEffect(() => {
-    if (!user || status === 'submitted' || status === 'recruited' || status === 'declined') return;
+    if (!user || status === 'submitted' || status === 'recruited' || status === 'declined') {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      return;
+    }
     
-    const timer = setTimeout(() => {
-      if (appData.fullName || appData.department || appData.essayWhy) {
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Set new timeout - only save if there's actual content
+    saveTimeoutRef.current = setTimeout(() => {
+      const currentData = appDataRef.current;
+      if (currentData.fullName || currentData.department || currentData.essayWhy) {
         saveDraft();
       }
-    }, 2000); // Auto-save after 2 seconds of inactivity
+      saveTimeoutRef.current = null;
+    }, 3000); // Auto-save after 3 seconds of inactivity
 
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appData, files, status]);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+    };
+  }, [appData, files, status, user, saveDraft]);
 
+  // Load application data - only once on mount
   useEffect(() => {
-    if(user) {
-        axios.get(`${API_URL}/api/application/${user.id}`)
-          .then(res => {
-            if(res.data) {
-              setApplication(res.data);
-              setStatus(res.data.status || 'New');
-              // Load existing application data
-              setAppData({
-                fullName: res.data.fullName || '',
-                hostel: res.data.hostel || '',
-                department: res.data.department || '',
-                programme: res.data.programme || '',
-                dob: res.data.dob || '',
-                phone: res.data.phone || '',
-                secondaryTeam: res.data.secondaryTeam || '',
-                essayWhy: res.data.essayWhy || '',
-                essaySkills: res.data.essaySkills || '',
-                terms: res.data.status === 'submitted'
-              });
-            } else {
-              // No application exists, check if user has seen checklist
-              const hasSeenChecklist = sessionStorage.getItem('hasSeenChecklist');
-              if (!hasSeenChecklist) {
-                navigate('/checklist');
-                return;
+    if (user && !dataLoadedRef.current) {
+      dataLoadedRef.current = true;
+      axios.get(`${API_URL}/api/application/${user.id}`)
+        .then(res => {
+          if(res.data) {
+            setApplication(res.data);
+            setStatus(res.data.status || 'New');
+            // Only set data if form is empty (first load)
+            setAppData(prev => {
+              // Only update if current data is empty (initial state)
+              if (!prev.fullName && !prev.department && !prev.essayWhy) {
+                return {
+                  fullName: res.data.fullName || '',
+                  hostel: res.data.hostel || '',
+                  department: res.data.department || '',
+                  programme: res.data.programme || '',
+                  dob: res.data.dob || '',
+                  phone: res.data.phone || '',
+                  secondaryTeam: res.data.secondaryTeam || '',
+                  essayWhy: res.data.essayWhy || '',
+                  essaySkills: res.data.essaySkills || '',
+                  terms: res.data.status === 'submitted'
+                };
               }
+              return prev; // Keep existing data if user has typed something
+            });
+          } else {
+            // No application exists, check if user has seen checklist
+            const hasSeenChecklist = sessionStorage.getItem('hasSeenChecklist');
+            if (!hasSeenChecklist) {
+              navigate('/checklist');
+              return;
             }
-            setIsLoading(false);
-          })
-          .catch(err => {
-            console.error('Error fetching application:', err);
-            setIsLoading(false);
+          }
+          setIsLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching application:', err);
+          setIsLoading(false);
         });
+    } else if (!user) {
+      dataLoadedRef.current = false;
     }
   }, [user, navigate]);
 
