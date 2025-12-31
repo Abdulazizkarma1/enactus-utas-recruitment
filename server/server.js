@@ -21,6 +21,15 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
+// Health check route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Enactus UTAS Recruitment API is running',
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/application', require('./routes/application'));
