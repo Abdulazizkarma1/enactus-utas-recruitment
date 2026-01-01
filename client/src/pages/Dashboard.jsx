@@ -114,63 +114,75 @@ export default function Dashboard() {
     };
   }, [appData, files, status, user, saveDraft]);
 
-  // Load application data - only once on mount
+  // Load application data - always reload when component mounts or user changes
   useEffect(() => {
-    if (user && !dataLoadedRef.current) {
-      dataLoadedRef.current = true;
-      axios.get(`${API_URL}/api/application/${user.id}`)
-        .then(res => {
-          if(res.data) {
-            const appStatus = res.data.status || 'New';
-            setApplication(res.data);
-            setStatus(appStatus); // Set status immediately - this determines form vs dashboard
-            
-            // Only set form data if status is 'New' or 'draft' (editable)
-            // If submitted, don't load form data - user should see dashboard
-            if (appStatus === 'New' || appStatus === 'draft') {
-              setAppData(prev => {
-                // Only update if current data is empty (initial state)
-                if (!prev.fullName && !prev.department && !prev.essayWhy) {
-                  return {
-                    fullName: res.data.fullName || '',
-                    hostel: res.data.hostel || '',
-                    department: res.data.department || '',
-                    programme: res.data.programme || '',
-                    dob: res.data.dob || '',
-                    phone: res.data.phone || '',
-                    secondaryTeam: res.data.secondaryTeam || '',
-                    essayWhy: res.data.essayWhy || '',
-                    essaySkills: res.data.essaySkills || '',
-                    terms: false // Not submitted yet
-                  };
-                }
-                return prev; // Keep existing data if user has typed something
-              });
-            }
-            // If status is submitted/recruited/declined/interview, don't set form data
-            // User will see read-only dashboard
-          } else {
-            // No application exists, check if user has seen checklist
-            const hasSeenChecklist = sessionStorage.getItem('hasSeenChecklist');
-            if (!hasSeenChecklist) {
-              navigate('/checklist');
-              return;
-            }
-            // No application, status remains 'New'
-            setStatus('New');
-          }
-          setIsLoading(false);
-        })
-        .catch(err => {
-          console.error('Error fetching application:', err);
-          setIsLoading(false);
-          // On error, assume new application
-          setStatus('New');
-        });
-    } else if (!user) {
-      dataLoadedRef.current = false;
+    const currentUserId = user?.id;
+    
+    if (!currentUserId) {
+      // User not logged in, redirect
+      navigate('/');
+      return;
     }
-  }, [user, navigate]);
+
+    // Always fetch fresh data when component mounts or user changes
+    // This ensures we get the latest status from the server
+    setIsLoading(true);
+    
+    axios.get(`${API_URL}/api/application/${currentUserId}`)
+      .then(res => {
+        if(res.data) {
+          const appStatus = res.data.status || 'New';
+          console.log('Application status loaded:', appStatus); // Debug log
+          setApplication(res.data);
+          setStatus(appStatus); // Set status immediately - this determines form vs dashboard
+          
+          // Only set form data if status is 'New' or 'draft' (editable)
+          // If submitted, don't load form data - user should see dashboard
+          if (appStatus === 'New' || appStatus === 'draft') {
+            setAppData(prev => {
+              // Only update if current data is empty (initial state)
+              if (!prev.fullName && !prev.department && !prev.essayWhy) {
+                return {
+                  fullName: res.data.fullName || '',
+                  hostel: res.data.hostel || '',
+                  department: res.data.department || '',
+                  programme: res.data.programme || '',
+                  dob: res.data.dob || '',
+                  phone: res.data.phone || '',
+                  secondaryTeam: res.data.secondaryTeam || '',
+                  essayWhy: res.data.essayWhy || '',
+                  essaySkills: res.data.essaySkills || '',
+                  terms: false // Not submitted yet
+                };
+              }
+              return prev; // Keep existing data if user has typed something
+            });
+          } else {
+            // Status is submitted - clear form data to ensure dashboard view
+            setAppData({
+              fullName: '', hostel: '', department: '', programme: '', dob: '', phone: '',
+              secondaryTeam: '', essayWhy: '', essaySkills: '', terms: false
+            });
+          }
+        } else {
+          // No application exists, check if user has seen checklist
+          const hasSeenChecklist = sessionStorage.getItem('hasSeenChecklist');
+          if (!hasSeenChecklist) {
+            navigate('/checklist');
+            return;
+          }
+          // No application, status remains 'New'
+          setStatus('New');
+        }
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching application:', err);
+        setIsLoading(false);
+        // On error, assume new application
+        setStatus('New');
+      });
+  }, [user?.id, navigate]); // Only depend on user.id, not entire user object
 
   // Auto-logout after 5 minutes of inactivity (for regular users)
   useInactivityLogout(5, () => {
@@ -386,23 +398,23 @@ export default function Dashboard() {
     return messages[status] || 'Your application is being processed.';
   };
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="container mt-5">
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // If application is submitted, show dashboard view (only for submitted/recruited/declined statuses)
   // Keep form editable for 'New' and 'draft' statuses
   // Check status first - if submitted, show dashboard regardless of application state
+  // IMPORTANT: Check status BEFORE loading check to ensure dashboard shows immediately
   if (status === 'submitted' || status === 'recruited' || status === 'declined' || status === 'interview') {
+    // Show loading only if we don't have application data yet
+    if (isLoading && !application) {
+      return (
+        <div className="container mt-5">
+          <div className="text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
     const statusBadge = getStatusBadge(status);
     
     return (
