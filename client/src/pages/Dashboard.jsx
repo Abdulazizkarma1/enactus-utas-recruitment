@@ -26,6 +26,7 @@ export default function Dashboard() {
   const saveTimeoutRef = useRef(null);
   const appDataRef = useRef(appData);
   const filesRef = useRef(files);
+  const userIdRef = useRef(null);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -556,6 +557,19 @@ export default function Dashboard() {
                 Logout
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state if still loading
+  if (isLoading) {
+    return (
+      <div className="container mt-5">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
         </div>
       </div>
