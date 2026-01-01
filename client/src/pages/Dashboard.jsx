@@ -7,7 +7,8 @@ import { useInactivityLogout } from '../hooks/useInactivityLogout';
 
 export default function Dashboard() {
   const [step, setStep] = useState(1);
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const userStr = localStorage.getItem('user');
+  const user = userStr && userStr !== 'null' ? JSON.parse(userStr) : null;
   const navigate = useNavigate();
   const [appData, setAppData] = useState({
     fullName: '', hostel: '', department: '', programme: '', dob: '', phone: '',
@@ -274,6 +275,13 @@ export default function Dashboard() {
   };
 
   const handleSubmit = async () => {
+    // Check if user is logged in
+    if (!user || !user.id) {
+      alert('You must be logged in to submit. Please login again.');
+      navigate('/');
+      return;
+    }
+
     // Final validation
     if (!validateStep1() || !validateStep2() || !validateStep3() || !validateStep4()) {
       setStep(4); // Go to final step to show errors
@@ -286,15 +294,15 @@ export default function Dashboard() {
     try {
       const formData = new FormData();
       formData.append('userId', user.id);
-      formData.append('fullName', appData.fullName);
-      formData.append('hostel', appData.hostel);
-      formData.append('department', appData.department);
-      formData.append('programme', appData.programme || '');
+      formData.append('fullName', appData.fullName.trim());
+      formData.append('hostel', appData.hostel.trim());
+      formData.append('department', appData.department.trim());
+      formData.append('programme', (appData.programme || '').trim());
       formData.append('dob', appData.dob || '');
-      formData.append('phone', appData.phone || '');
+      formData.append('phone', (appData.phone || '').trim());
       formData.append('secondaryTeam', appData.secondaryTeam);
-      formData.append('essayWhy', appData.essayWhy);
-      formData.append('essaySkills', appData.essaySkills);
+      formData.append('essayWhy', appData.essayWhy.trim());
+      formData.append('essaySkills', appData.essaySkills.trim());
       
       if (files.profilePic) {
         formData.append('profilePic', files.profilePic);
@@ -306,19 +314,40 @@ export default function Dashboard() {
       // Show processing delay for better UX
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      await axios.post(`${API_URL}/api/application/submit`, formData, {
+      const response = await axios.post(`${API_URL}/api/application/submit`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      // Additional delay before redirect for smooth transition
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      navigate('/success');
+      // Check if submission was successful
+      if (response.data && response.data.msg) {
+        // Additional delay before redirect for smooth transition
+        await new Promise(resolve => setTimeout(resolve, 800));
+        navigate('/success');
+      } else {
+        throw new Error('Unexpected response from server');
+      }
     } catch (err) {
       console.error('Submission error:', err);
-      alert(err.response?.data?.msg || 'Error submitting application. Please try again.');
+      let errorMsg = 'Error submitting application. Please try again.';
+      
+      if (err.response) {
+        // Server responded with error
+        errorMsg = err.response.data?.msg || `Server error: ${err.response.status}`;
+        if (err.response.status === 400) {
+          errorMsg = err.response.data?.msg || 'Please check all required fields are filled correctly.';
+        }
+      } else if (err.request) {
+        // Request made but no response
+        errorMsg = 'Cannot connect to server. Please check your connection and try again.';
+        console.error('API URL:', API_URL);
+      } else {
+        // Something else happened
+        errorMsg = err.message || 'An unexpected error occurred';
+      }
+      
+      alert(errorMsg);
       setIsSubmitting(false);
     }
   };
