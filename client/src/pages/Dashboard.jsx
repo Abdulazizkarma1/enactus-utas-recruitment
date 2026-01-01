@@ -120,27 +120,34 @@ export default function Dashboard() {
       axios.get(`${API_URL}/api/application/${user.id}`)
         .then(res => {
           if(res.data) {
+            const appStatus = res.data.status || 'New';
             setApplication(res.data);
-            setStatus(res.data.status || 'New');
-            // Only set data if form is empty (first load)
-            setAppData(prev => {
-              // Only update if current data is empty (initial state)
-              if (!prev.fullName && !prev.department && !prev.essayWhy) {
-                return {
-                  fullName: res.data.fullName || '',
-                  hostel: res.data.hostel || '',
-                  department: res.data.department || '',
-                  programme: res.data.programme || '',
-                  dob: res.data.dob || '',
-                  phone: res.data.phone || '',
-                  secondaryTeam: res.data.secondaryTeam || '',
-                  essayWhy: res.data.essayWhy || '',
-                  essaySkills: res.data.essaySkills || '',
-                  terms: res.data.status === 'submitted'
-                };
-              }
-              return prev; // Keep existing data if user has typed something
-            });
+            setStatus(appStatus); // Set status immediately - this determines form vs dashboard
+            
+            // Only set form data if status is 'New' or 'draft' (editable)
+            // If submitted, don't load form data - user should see dashboard
+            if (appStatus === 'New' || appStatus === 'draft') {
+              setAppData(prev => {
+                // Only update if current data is empty (initial state)
+                if (!prev.fullName && !prev.department && !prev.essayWhy) {
+                  return {
+                    fullName: res.data.fullName || '',
+                    hostel: res.data.hostel || '',
+                    department: res.data.department || '',
+                    programme: res.data.programme || '',
+                    dob: res.data.dob || '',
+                    phone: res.data.phone || '',
+                    secondaryTeam: res.data.secondaryTeam || '',
+                    essayWhy: res.data.essayWhy || '',
+                    essaySkills: res.data.essaySkills || '',
+                    terms: false // Not submitted yet
+                  };
+                }
+                return prev; // Keep existing data if user has typed something
+              });
+            }
+            // If status is submitted/recruited/declined/interview, don't set form data
+            // User will see read-only dashboard
           } else {
             // No application exists, check if user has seen checklist
             const hasSeenChecklist = sessionStorage.getItem('hasSeenChecklist');
@@ -148,12 +155,16 @@ export default function Dashboard() {
               navigate('/checklist');
               return;
             }
+            // No application, status remains 'New'
+            setStatus('New');
           }
           setIsLoading(false);
         })
         .catch(err => {
           console.error('Error fetching application:', err);
           setIsLoading(false);
+          // On error, assume new application
+          setStatus('New');
         });
     } else if (!user) {
       dataLoadedRef.current = false;
@@ -389,7 +400,8 @@ export default function Dashboard() {
 
   // If application is submitted, show dashboard view (only for submitted/recruited/declined statuses)
   // Keep form editable for 'New' and 'draft' statuses
-  if (application && (status === 'submitted' || status === 'recruited' || status === 'declined' || status === 'interview')) {
+  // Check status first - if submitted, show dashboard regardless of application state
+  if (status === 'submitted' || status === 'recruited' || status === 'declined' || status === 'interview') {
     const statusBadge = getStatusBadge(status);
     
     return (
@@ -424,9 +436,9 @@ export default function Dashboard() {
                 {/* Profile Section */}
                 <div className="row mb-4">
                   <div className="col-12 col-md-3 text-center mb-3 mb-md-0">
-                    {application.profilePic ? (
+                    {application?.profilePic ? (
                       <img 
-                        src={`${API_URL}/${application.profilePic}`} 
+                        src={`${API_URL}/${application?.profilePic}`} 
                         alt="Profile" 
                         className="img-fluid rounded-circle"
                         style={{width: '120px', height: '120px', objectFit: 'cover', border: '3px solid #800000'}}
@@ -448,23 +460,23 @@ export default function Dashboard() {
                     )}
                   </div>
                   <div className="col-12 col-md-9">
-                    <h5 className="mb-3">{application.fullName || 'N/A'}</h5>
+                    <h5 className="mb-3">{application?.fullName || 'N/A'}</h5>
                     <div className="row">
                       <div className="col-md-6 mb-2">
                         <strong>Student ID:</strong> {user?.studentId || 'N/A'}
                       </div>
                       <div className="col-md-6 mb-2">
-                        <strong>Department:</strong> {application.department || 'N/A'}
+                        <strong>Department:</strong> {application?.department || 'N/A'}
                       </div>
                       <div className="col-md-6 mb-2">
-                        <strong>Hostel/Residence:</strong> {application.hostel || 'N/A'}
+                        <strong>Hostel/Residence:</strong> {application?.hostel || 'N/A'}
                       </div>
                       <div className="col-md-6 mb-2">
-                        <strong>Phone:</strong> {application.phone || 'N/A'}
+                        <strong>Phone:</strong> {application?.phone || 'N/A'}
                       </div>
-                      {application.programme && (
+                      {application?.programme && (
                         <div className="col-md-6 mb-2">
-                          <strong>Programme:</strong> {application.programme}
+                          <strong>Programme:</strong> {application?.programme}
                         </div>
                       )}
                     </div>
@@ -478,8 +490,8 @@ export default function Dashboard() {
                   <h5 style={{color: '#800000'}}>Team Selection</h5>
                   <div className="d-flex gap-2 flex-wrap">
                     <span className="badge bg-primary fs-6 px-3 py-2">Field Work Team (Mandatory)</span>
-                    {application.secondaryTeam && (
-                      <span className="badge bg-warning fs-6 px-3 py-2">{application.secondaryTeam}</span>
+                    {application?.secondaryTeam && (
+                      <span className="badge bg-warning fs-6 px-3 py-2">{application?.secondaryTeam}</span>
                     )}
                   </div>
                 </div>
@@ -490,14 +502,14 @@ export default function Dashboard() {
                 <div className="mb-4">
                   <h5 style={{color: '#800000'}}>Why do you want to join Enactus CKT-UTAS?</h5>
                   <p className="text-muted" style={{whiteSpace: 'pre-wrap', lineHeight: '1.8'}}>
-                    {application.essayWhy || 'N/A'}
+                    {application?.essayWhy || 'N/A'}
                   </p>
                 </div>
 
                 <div className="mb-4">
                   <h5 style={{color: '#800000'}}>What unique skills do you bring?</h5>
                   <p className="text-muted" style={{whiteSpace: 'pre-wrap', lineHeight: '1.8'}}>
-                    {application.essaySkills || 'N/A'}
+                    {application?.essaySkills || 'N/A'}
                   </p>
                 </div>
 
@@ -507,9 +519,9 @@ export default function Dashboard() {
                 <div className="mb-4">
                   <h5 style={{color: '#800000'}}>Uploaded Documents</h5>
                   <div className="d-flex gap-3">
-                    {application.cv ? (
+                    {application?.cv ? (
                       <a 
-                        href={`${API_URL}/${application.cv}`} 
+                        href={`${API_URL}/${application?.cv}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="btn btn-outline-primary"
@@ -523,9 +535,9 @@ export default function Dashboard() {
                 </div>
 
                 {/* Submission Date */}
-                {application.createdAt && (
+                {application?.createdAt && (
                   <div className="text-muted small">
-                    <strong>Submitted on:</strong> {new Date(application.createdAt).toLocaleString()}
+                    <strong>Submitted on:</strong> {new Date(application?.createdAt).toLocaleString()}
                   </div>
                 )}
               </div>
