@@ -22,8 +22,58 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Serve uploaded files
-app.use('/uploads', express.static(uploadsDir));
+// Serve uploaded files - use absolute path and set proper headers
+app.use('/uploads', express.static(uploadsDir, {
+    setHeaders: (res, filePath) => {
+        // Set appropriate content type based on file extension
+        const ext = path.extname(filePath).toLowerCase();
+        const contentTypes = {
+            '.pdf': 'application/pdf',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif'
+        };
+        if (contentTypes[ext]) {
+            res.setHeader('Content-Type', contentTypes[ext]);
+        }
+        // Allow CORS for file access
+        res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+    }
+}));
+
+// Fallback route for file access (in case static middleware doesn't catch it)
+app.get('/uploads/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(uploadsDir, filename);
+    
+    // Security: prevent directory traversal
+    if (!path.resolve(filePath).startsWith(path.resolve(uploadsDir))) {
+        return res.status(403).json({ msg: 'Access denied' });
+    }
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ msg: 'File not found' });
+    }
+    
+    // Set appropriate content type
+    const ext = path.extname(filename).toLowerCase();
+    const contentTypes = {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif'
+    };
+    const contentType = contentTypes[ext] || 'application/octet-stream';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+    
+    // Send file
+    res.sendFile(filePath);
+});
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
