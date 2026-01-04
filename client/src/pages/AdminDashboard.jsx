@@ -499,7 +499,7 @@ export default function AdminDashboard() {
                               <td>
                                 {app.profilePic ? (
                                   <img 
-                                    src={`${API_URL}/${app.profilePic}`} 
+                                    src={`${API_URL}/uploads/${app.profilePic}`} 
                                     alt="profile" 
                                     width="50" 
                                     height="50"
