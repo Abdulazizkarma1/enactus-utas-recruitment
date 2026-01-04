@@ -446,7 +446,7 @@ export default function Dashboard() {
                   <div className="col-12 col-md-3 text-center mb-3 mb-md-0">
                     {application?.profilePic ? (
                       <img 
-                        src={`${API_URL}/${application?.profilePic}`} 
+                        src={`${API_URL}/uploads/${application?.profilePic}`} 
                         alt="Profile" 
                         className="img-fluid rounded-circle"
                         style={{width: '120px', height: '120px', objectFit: 'cover', border: '3px solid #800000'}}
