@@ -22,6 +22,8 @@ export default function AdminDashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Logout function
   const handleLogout = () => {
@@ -490,7 +492,7 @@ export default function AdminDashboard() {
                             <th>Teams</th>
                             <th>Files</th>
                             <th>Status</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -568,16 +570,36 @@ export default function AdminDashboard() {
                                 </span>
                               </td>
                               <td>
-                                <select 
-                                  className="form-select form-select-sm"
-                                  onChange={(e) => updateStatus(app._id, e.target.value)} 
-                                  value={app.status || 'submitted'}
-                                >
-                                  <option value="submitted">Submitted</option>
-                                  <option value="interview">Pending Interview</option>
-                                  <option value="recruited">Recruited</option>
-                                  <option value="declined">Declined</option>
-                                </select>
+                                <div className="d-flex flex-column gap-1">
+                                  <button
+                                    className="btn btn-sm btn-primary"
+                                    onClick={() => {
+                                      setSelectedApplicant(app);
+                                      setShowDetailsModal(true);
+                                    }}
+                                    title="View full details"
+                                  >
+                                    <i className="bi bi-eye me-1"></i>Details
+                                  </button>
+                                  <a
+                                    href={`${API_URL}/api/admin/pdf/${app._id}`}
+                                    className="btn btn-sm btn-danger"
+                                    download
+                                    title="Download PDF summary"
+                                  >
+                                    <i className="bi bi-file-earmark-pdf me-1"></i>PDF
+                                  </a>
+                                  <select 
+                                    className="form-select form-select-sm"
+                                    onChange={(e) => updateStatus(app._id, e.target.value)} 
+                                    value={app.status || 'submitted'}
+                                  >
+                                    <option value="submitted">Submitted</option>
+                                    <option value="interview">Pending Interview</option>
+                                    <option value="recruited">Recruited</option>
+                                    <option value="declined">Declined</option>
+                                  </select>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -728,6 +750,173 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {/* Applicant Details Modal */}
+      {showDetailsModal && selectedApplicant && (
+        <div 
+          className="modal show d-block" 
+          tabIndex="-1" 
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowDetailsModal(false)}
+        >
+          <div 
+            className="modal-dialog modal-lg modal-dialog-scrollable" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content">
+              <div className="modal-header" style={{ backgroundColor: '#800000', color: 'white' }}>
+                <h5 className="modal-title">
+                  <i className="bi bi-person-circle me-2"></i>
+                  Applicant Details: {selectedApplicant.fullName}
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close btn-close-white" 
+                  onClick={() => setShowDetailsModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="row">
+                  <div className="col-md-4 text-center mb-3">
+                    {selectedApplicant.profilePic ? (
+                      <img 
+                        src={getFileUrl(selectedApplicant.profilePic)} 
+                        alt="Profile" 
+                        className="img-fluid rounded"
+                        style={{ maxHeight: '200px', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div className="bg-light rounded p-5">
+                        <i className="bi bi-person-circle" style={{ fontSize: '5rem', color: '#ccc' }}></i>
+                        <p className="text-muted mt-2">No Photo</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-md-8">
+                    <h6 style={{ color: '#800000' }}>Personal Information</h6>
+                    <table className="table table-sm table-borderless">
+                      <tbody>
+                        <tr>
+                          <td><strong>Full Name:</strong></td>
+                          <td>{selectedApplicant.fullName || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Student ID:</strong></td>
+                          <td>{selectedApplicant.user?.studentId || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Email:</strong></td>
+                          <td>{selectedApplicant.user?.email || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Date of Birth:</strong></td>
+                          <td>{selectedApplicant.dob ? new Date(selectedApplicant.dob).toLocaleDateString() : 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Phone:</strong></td>
+                          <td>{selectedApplicant.phone || 'N/A'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <hr />
+
+                <h6 style={{ color: '#800000' }}>Academic Information</h6>
+                <table className="table table-sm table-borderless">
+                  <tbody>
+                    <tr>
+                      <td><strong>Department:</strong></td>
+                      <td>{selectedApplicant.department || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Programme:</strong></td>
+                      <td>{selectedApplicant.programme || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Hostel:</strong></td>
+                      <td>{selectedApplicant.hostel || 'N/A'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <hr />
+
+                <h6 style={{ color: '#800000' }}>Team Selection</h6>
+                <p>
+                  <span className="badge bg-info me-2">Field Work Team (Mandatory)</span>
+                  {selectedApplicant.secondaryTeam && (
+                    <span className="badge bg-warning">{selectedApplicant.secondaryTeam}</span>
+                  )}
+                </p>
+
+                <hr />
+
+                <h6 style={{ color: '#800000' }}>Application Status</h6>
+                <span className={`badge ${
+                  selectedApplicant.status === 'recruited' ? 'bg-success' :
+                  selectedApplicant.status === 'interview' ? 'bg-warning' :
+                  selectedApplicant.status === 'declined' ? 'bg-danger' :
+                  'bg-secondary'
+                }`}>
+                  {selectedApplicant.status || 'submitted'}
+                </span>
+
+                <hr />
+
+                <h6 style={{ color: '#800000' }}>Essay: Why do you want to join Enactus UTAS?</h6>
+                <div className="card bg-light p-3 mb-3">
+                  <p className="mb-0" style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>
+                    {selectedApplicant.essayWhy || 'Not provided'}
+                  </p>
+                </div>
+
+                <h6 style={{ color: '#800000' }}>Essay: What skills and experiences can you bring to Enactus UTAS?</h6>
+                <div className="card bg-light p-3 mb-3">
+                  <p className="mb-0" style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>
+                    {selectedApplicant.essaySkills || 'Not provided'}
+                  </p>
+                </div>
+
+                <hr />
+
+                <h6 style={{ color: '#800000' }}>Attachments</h6>
+                <div className="d-flex gap-2">
+                  {selectedApplicant.cv ? (
+                    <a 
+                      href={getFileUrl(selectedApplicant.cv)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-info"
+                    >
+                      <i className="bi bi-file-earmark-pdf me-1"></i>View CV
+                    </a>
+                  ) : (
+                    <span className="text-muted">No CV uploaded</span>
+                  )}
+                </div>
+              </div>
+              <div className="modal-footer">
+                <a
+                  href={`${API_URL}/api/admin/pdf/${selectedApplicant._id}`}
+                  className="btn btn-danger"
+                  download
+                >
+                  <i className="bi bi-file-earmark-pdf me-1"></i>Download PDF Summary
+                </a>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowDetailsModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

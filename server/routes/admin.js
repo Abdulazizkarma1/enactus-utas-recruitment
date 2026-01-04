@@ -56,17 +56,24 @@ router.get('/applicants', async (req, res) => {
     res.json(apps);
 });
 
-// DOWNLOAD PDF ROUTE
+// DOWNLOAD PDF ROUTE - Enhanced with all applicant information
 router.get('/pdf/:appId', async (req, res) => {
     try {
-        const app = await Application.findById(req.params.appId);
+        const app = await Application.findById(req.params.appId).populate('user', 'studentId email');
+        
+        if (!app) {
+            return res.status(404).json({ msg: 'Application not found' });
+        }
 
-        // Create a PDF document
-        const doc = new PDFDocument();
+        // Create a PDF document with margins
+        const doc = new PDFDocument({ 
+            margins: { top: 50, bottom: 50, left: 50, right: 50 }
+        });
 
         // Pipe the PDF into the response (download it directly)
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Enactus_${app.fullName}.pdf`);
+        const safeFileName = app.fullName ? app.fullName.replace(/[^a-z0-9]/gi, '_') : 'Application';
+        res.setHeader('Content-Disposition', `attachment; filename=Enactus_${safeFileName}_${app._id}.pdf`);
         doc.pipe(res);
 
         // --- PDF CONTENT DESIGN ---
@@ -74,38 +81,88 @@ router.get('/pdf/:appId', async (req, res) => {
         // Header
         doc.fontSize(20).fillColor('#800000').text('ENACTUS UTAS', { align: 'center' });
         doc.fontSize(12).fillColor('black').text('Recruitment Application Summary', { align: 'center' });
-        doc.moveDown();
+        doc.fontSize(10).fillColor('#666').text(`Application Date: ${app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'N/A'}`, { align: 'center' });
+        doc.moveDown(1.5);
 
-        // Section 1: Biodata
-        doc.fontSize(14).fillColor('#800000').text('1. Personal Details');
-        doc.fontSize(12).fillColor('black');
-        doc.text(`Name: ${app.fullName}`);
-        doc.text(`Department: ${app.department}`);
-        doc.text(`Hostel: ${app.hostel}`);
-        doc.text(`Phone: ${app.phone || 'N/A'}`);
-        doc.moveDown();
+        // Section 1: Personal Information
+        doc.fontSize(14).fillColor('#800000').text('1. Personal Information', { underline: true });
+        doc.fontSize(11).fillColor('black');
+        doc.text(`Full Name: ${app.fullName || 'N/A'}`);
+        doc.text(`Student ID: ${app.user?.studentId || 'N/A'}`);
+        doc.text(`Email: ${app.user?.email || 'N/A'}`);
+        doc.text(`Date of Birth: ${app.dob ? new Date(app.dob).toLocaleDateString() : 'N/A'}`);
+        doc.text(`Phone Number: ${app.phone || 'N/A'}`);
+        doc.moveDown(0.5);
 
-        // Section 2: Teams
-        doc.fontSize(14).fillColor('#800000').text('2. Team Selection');
-        doc.fontSize(12).fillColor('black');
-        doc.text(`Mandatory: Field Work Team`);
-        doc.text(`Secondary: ${app.secondaryTeam}`);
-        doc.moveDown();
+        // Section 2: Academic Information
+        doc.fontSize(14).fillColor('#800000').text('2. Academic Information', { underline: true });
+        doc.fontSize(11).fillColor('black');
+        doc.text(`Department: ${app.department || 'N/A'}`);
+        doc.text(`Programme: ${app.programme || 'N/A'}`);
+        doc.text(`Hostel: ${app.hostel || 'N/A'}`);
+        doc.moveDown(0.5);
 
-        // Section 3: Essays
-        doc.fontSize(14).fillColor('#800000').text('3. Essay: Why Join?');
-        doc.fontSize(11).fillColor('black').text(app.essayWhy);
-        doc.moveDown();
+        // Section 3: Team Selection
+        doc.fontSize(14).fillColor('#800000').text('3. Team Selection', { underline: true });
+        doc.fontSize(11).fillColor('black');
+        doc.text(`Mandatory Team: Field Work Team`);
+        doc.text(`Secondary Team: ${app.secondaryTeam || 'N/A'}`);
+        doc.moveDown(0.5);
 
-        doc.fontSize(14).fillColor('#800000').text('3. Essay: Skills');
-        doc.fontSize(11).fillColor('black').text(app.essaySkills);
-        doc.moveDown();
+        // Section 4: Application Status
+        doc.fontSize(14).fillColor('#800000').text('4. Application Status', { underline: true });
+        doc.fontSize(11).fillColor('black');
+        const statusLabels = {
+            'New': 'New Application',
+            'draft': 'Draft',
+            'submitted': 'Submitted',
+            'interview': 'Interview Stage',
+            'recruited': 'Recruited',
+            'declined': 'Declined'
+        };
+        doc.text(`Status: ${statusLabels[app.status] || app.status || 'Submitted'}`);
+        doc.moveDown(1);
+
+        // Section 5: Essay Responses
+        doc.fontSize(14).fillColor('#800000').text('5. Essay: Why do you want to join Enactus UTAS?', { underline: true });
+        doc.fontSize(10).fillColor('black');
+        if (app.essayWhy) {
+            // Handle long text by wrapping
+            doc.text(app.essayWhy, {
+                width: 500,
+                align: 'left',
+                lineGap: 2
+            });
+        } else {
+            doc.text('Not provided', { italic: true });
+        }
+        doc.moveDown(1);
+
+        doc.fontSize(14).fillColor('#800000').text('6. Essay: What skills and experiences can you bring to Enactus UTAS?', { underline: true });
+        doc.fontSize(10).fillColor('black');
+        if (app.essaySkills) {
+            doc.text(app.essaySkills, {
+                width: 500,
+                align: 'left',
+                lineGap: 2
+            });
+        } else {
+            doc.text('Not provided', { italic: true });
+        }
+        doc.moveDown(1);
+
+        // Footer
+        doc.fontSize(8).fillColor('#999').text(
+            `Generated on ${new Date().toLocaleString()} | Enactus UTAS Recruitment System`,
+            { align: 'center' }
+        );
 
         // Finalize
         doc.end();
 
     } catch (err) {
-        res.status(500).send("Error generating PDF");
+        console.error('PDF generation error:', err);
+        res.status(500).json({ msg: "Error generating PDF", error: err.message });
     }
 });
 
