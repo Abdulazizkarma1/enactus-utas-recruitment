@@ -37,15 +37,16 @@ router.post('/submit', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), 
             status: 'submitted'
         };
 
-        // Handle file uploads - store only filename (not full path)
+        // Handle file uploads - store path relative to uploads directory
         if (req.files && req.files.profilePic) {
-            // Extract just the filename from the path
+            // Multer stores path as 'uploads/filename.jpg', we need just 'filename.jpg'
             const filePath = req.files.profilePic[0].path;
-            updateData.profilePic = filePath.replace(/^uploads[\/\\]/, ''); // Remove 'uploads/' prefix if present
+            // Extract filename from path (handles both 'uploads/filename.jpg' and 'uploads\\filename.jpg')
+            updateData.profilePic = path.basename(filePath);
         }
         if (req.files && req.files.cv) {
             const filePath = req.files.cv[0].path;
-            updateData.cv = filePath.replace(/^uploads[\/\\]/, ''); // Remove 'uploads/' prefix if present
+            updateData.cv = path.basename(filePath);
         }
 
         // Upsert: Update if exists, Create if new
@@ -86,15 +87,16 @@ router.post('/draft', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), a
         if (essayWhy) updateData.essayWhy = essayWhy.trim();
         if (essaySkills) updateData.essaySkills = essaySkills.trim();
 
-        // Handle file uploads - store only filename (not full path)
+        // Handle file uploads - store path relative to uploads directory
         if (req.files && req.files.profilePic) {
-            // Extract just the filename from the path
+            // Multer stores path as 'uploads/filename.jpg', we need just 'filename.jpg'
             const filePath = req.files.profilePic[0].path;
-            updateData.profilePic = filePath.replace(/^uploads[\/\\]/, ''); // Remove 'uploads/' prefix if present
+            // Extract filename from path (handles both 'uploads/filename.jpg' and 'uploads\\filename.jpg')
+            updateData.profilePic = path.basename(filePath);
         }
         if (req.files && req.files.cv) {
             const filePath = req.files.cv[0].path;
-            updateData.cv = filePath.replace(/^uploads[\/\\]/, ''); // Remove 'uploads/' prefix if present
+            updateData.cv = path.basename(filePath);
         }
 
         const app = await Application.findOneAndUpdate(
