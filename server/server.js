@@ -47,15 +47,38 @@ app.use('/uploads', express.static(uploadsDir, {
 app.get('/uploads/:filename', (req, res) => {
     const filename = req.params.filename;
     const filePath = path.join(uploadsDir, filename);
+    const resolvedFilePath = path.resolve(filePath);
+    const resolvedUploadsDir = path.resolve(uploadsDir);
+    
+    console.log(`[File Request] Filename: ${filename}`);
+    console.log(`[File Request] File path: ${filePath}`);
+    console.log(`[File Request] Resolved file path: ${resolvedFilePath}`);
+    console.log(`[File Request] Resolved uploads dir: ${resolvedUploadsDir}`);
+    console.log(`[File Request] Uploads dir exists: ${fs.existsSync(uploadsDir)}`);
+    console.log(`[File Request] File exists: ${fs.existsSync(filePath)}`);
     
     // Security: prevent directory traversal
-    if (!path.resolve(filePath).startsWith(path.resolve(uploadsDir))) {
+    if (!resolvedFilePath.startsWith(resolvedUploadsDir)) {
+        console.log(`[File Request] Security check failed: ${resolvedFilePath} not in ${resolvedUploadsDir}`);
         return res.status(403).json({ msg: 'Access denied' });
     }
     
     // Check if file exists
     if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ msg: 'File not found' });
+        console.log(`[File Request] File not found: ${filePath}`);
+        // List files in uploads directory for debugging
+        try {
+            const files = fs.readdirSync(uploadsDir);
+            console.log(`[File Request] Files in uploads directory: ${files.join(', ')}`);
+        } catch (err) {
+            console.error(`[File Request] Error reading uploads directory: ${err.message}`);
+        }
+        return res.status(404).json({ 
+            msg: 'File not found',
+            filename: filename,
+            uploadsDir: uploadsDir,
+            filePath: filePath
+        });
     }
     
     // Set appropriate content type
@@ -71,8 +94,16 @@ app.get('/uploads/:filename', (req, res) => {
     res.setHeader('Content-Type', contentType);
     res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
     
+    console.log(`[File Request] Serving file: ${filePath}`);
     // Send file
-    res.sendFile(filePath);
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error(`[File Request] Error sending file: ${err.message}`);
+            if (!res.headersSent) {
+                res.status(500).json({ msg: 'Error serving file', error: err.message });
+            }
+        }
+    });
 });
 
 // Database Connection
