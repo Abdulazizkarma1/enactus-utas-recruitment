@@ -32,7 +32,63 @@ if (!fs.existsSync(uploadsDir)) {
     }
 }
 
-// Serve uploaded files - static middleware handles file serving
+// Route handler for file access - handles /uploads/:filename requests
+app.get('/uploads/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(uploadsDir, filename);
+    const resolvedFilePath = path.resolve(filePath);
+    const resolvedUploadsDir = path.resolve(uploadsDir);
+    
+    // Security: prevent directory traversal
+    if (!resolvedFilePath.startsWith(resolvedUploadsDir)) {
+        return res.status(403).json({ msg: 'Access denied' });
+    }
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+        console.log(`[File Request] File not found: ${filename}`);
+        // List available files for debugging
+        try {
+            const files = fs.readdirSync(uploadsDir);
+            console.log(`[File Request] Available files (${files.length}): ${files.slice(0, 5).join(', ')}${files.length > 5 ? '...' : ''}`);
+        } catch (err) {
+            console.error(`[File Request] Error reading directory: ${err.message}`);
+        }
+        return res.status(404).json({ 
+            msg: 'File not found',
+            filename: filename
+        });
+    }
+    
+    // Set appropriate content type
+    const ext = path.extname(filename).toLowerCase();
+    const contentTypes = {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+    };
+    const contentType = contentTypes[ext] || 'application/octet-stream';
+    
+    // Set headers
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    
+    // Send file
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error(`[File Request] Error sending file: ${err.message}`);
+            if (!res.headersSent) {
+                res.status(500).json({ msg: 'Error serving file', error: err.message });
+            }
+        }
+    });
+});
+
+// Serve uploaded files - static middleware as additional fallback
 app.use('/uploads', express.static(uploadsDir, {
     setHeaders: (res, filePath) => {
         // Set appropriate content type based on file extension
@@ -42,7 +98,8 @@ app.use('/uploads', express.static(uploadsDir, {
             '.jpg': 'image/jpeg',
             '.jpeg': 'image/jpeg',
             '.png': 'image/png',
-            '.gif': 'image/gif'
+            '.gif': 'image/gif',
+            '.webp': 'image/webp'
         };
         if (contentTypes[ext]) {
             res.setHeader('Content-Type', contentTypes[ext]);
