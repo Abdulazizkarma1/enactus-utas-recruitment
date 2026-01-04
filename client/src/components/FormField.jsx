@@ -17,7 +17,10 @@ export default function FormField({
   error,
   required = false,
   guideText,
-  accept
+  accept,
+  disabled = false,
+  min,
+  max
 }) {
   
   const renderTooltip = (props) => (
@@ -127,12 +130,15 @@ export default function FormField({
       ) : (
         <input 
           type={type} 
-          className={`form-control ${error ? 'is-invalid' : ''}`}
+          className={`form-control ${error ? 'is-invalid' : ''} ${disabled ? 'bg-light' : ''}`}
           value={value || ''} 
           onChange={onChange} 
           placeholder={placeholder}
           required={required}
           maxLength={maxChars}
+          disabled={disabled}
+          min={min}
+          max={max}
         />
       )}
 

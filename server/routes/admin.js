@@ -91,6 +91,8 @@ router.get('/pdf/:appId', async (req, res) => {
         doc.text(`Student ID: ${app.user?.studentId || 'N/A'}`);
         doc.text(`Email: ${app.user?.email || 'N/A'}`);
         doc.text(`Date of Birth: ${app.dob ? new Date(app.dob).toLocaleDateString() : 'N/A'}`);
+        doc.text(`Age: ${app.age || 'N/A'}`);
+        doc.text(`Gender: ${app.gender || 'N/A'}`);
         doc.text(`Phone Number: ${app.phone || 'N/A'}`);
         doc.moveDown(0.5);
 
@@ -98,6 +100,10 @@ router.get('/pdf/:appId', async (req, res) => {
         doc.fontSize(14).fillColor('#800000').text('2. Academic Information', { underline: true });
         doc.fontSize(11).fillColor('black');
         doc.text(`Department: ${app.department || 'N/A'}`);
+        doc.text(`Study Type: ${app.studyType || 'N/A'}`);
+        if (app.studyType === 'Undergraduate') {
+            doc.text(`Level: ${app.level || 'N/A'}`);
+        }
         doc.text(`Programme: ${app.programme || 'N/A'}`);
         doc.text(`Hostel: ${app.hostel || 'N/A'}`);
         doc.moveDown(0.5);

@@ -8,6 +8,16 @@ const ApplicationSchema = new mongoose.Schema({
     department: String,
     programme: String,
     dob: Date,
+    age: Number,
+    gender: {
+        type: String,
+        enum: ['Male', 'Female', 'Other', 'Prefer not to say']
+    },
+    studyType: {
+        type: String,
+        enum: ['Undergraduate', 'Post-graduate']
+    },
+    level: String, // For undergraduate: 100, 200, 300, 400
     phone: String,
 
     // Step 2: Teams

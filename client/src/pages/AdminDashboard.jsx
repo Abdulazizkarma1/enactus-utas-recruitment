@@ -533,6 +533,15 @@ export default function AdminDashboard() {
                               </td>
                               <td>
                                 <small>{app.department || 'N/A'}</small>
+                                {app.studyType && (
+                                  <>
+                                    <br />
+                                    <span className="badge bg-secondary mt-1">{app.studyType}</span>
+                                    {app.studyType === 'Undergraduate' && app.level && (
+                                      <span className="badge bg-info ms-1 mt-1">Level {app.level}</span>
+                                    )}
+                                  </>
+                                )}
                               </td>
                               <td>
                                 <small>
@@ -813,6 +822,14 @@ export default function AdminDashboard() {
                           <td>{selectedApplicant.dob ? new Date(selectedApplicant.dob).toLocaleDateString() : 'N/A'}</td>
                         </tr>
                         <tr>
+                          <td><strong>Age:</strong></td>
+                          <td>{selectedApplicant.age || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Gender:</strong></td>
+                          <td>{selectedApplicant.gender || 'N/A'}</td>
+                        </tr>
+                        <tr>
                           <td><strong>Phone:</strong></td>
                           <td>{selectedApplicant.phone || 'N/A'}</td>
                         </tr>
@@ -830,6 +847,16 @@ export default function AdminDashboard() {
                       <td><strong>Department:</strong></td>
                       <td>{selectedApplicant.department || 'N/A'}</td>
                     </tr>
+                    <tr>
+                      <td><strong>Study Type:</strong></td>
+                      <td>{selectedApplicant.studyType || 'N/A'}</td>
+                    </tr>
+                    {selectedApplicant.studyType === 'Undergraduate' && (
+                      <tr>
+                        <td><strong>Level:</strong></td>
+                        <td>{selectedApplicant.level || 'N/A'}</td>
+                      </tr>
+                    )}
                     <tr>
                       <td><strong>Programme:</strong></td>
                       <td>{selectedApplicant.programme || 'N/A'}</td>

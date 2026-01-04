@@ -11,7 +11,8 @@ export default function Dashboard() {
   const user = userStr && userStr !== 'null' ? JSON.parse(userStr) : null;
   const navigate = useNavigate();
   const [appData, setAppData] = useState({
-    fullName: '', hostel: '', department: '', programme: '', dob: '', phone: '',
+    fullName: '', hostel: '', department: '', programme: '', dob: '', age: '', gender: '', 
+    studyType: '', level: '', phone: '',
     secondaryTeam: '', essayWhy: '', essaySkills: '', terms: false
   });
   const [files, setFiles] = useState({ profilePic: null, cv: null });
@@ -27,6 +28,27 @@ export default function Dashboard() {
   const appDataRef = useRef(appData);
   const filesRef = useRef(files);
   const userIdRef = useRef(null);
+
+  // Calculate age from date of birth
+  const calculateAge = (dob) => {
+    if (!dob) return '';
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age > 0 ? age.toString() : '';
+  };
+
+  // Handle date of birth change and auto-calculate age
+  const handleDobChange = (dob) => {
+    const age = calculateAge(dob);
+    setAppData({...appData, dob, age});
+    if (errors.dob) setErrors({...errors, dob: null});
+    if (errors.age) setErrors({...errors, age: null});
+  };
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -54,6 +76,10 @@ export default function Dashboard() {
       if (currentAppData.department) formData.append('department', currentAppData.department);
       if (currentAppData.programme) formData.append('programme', currentAppData.programme);
       if (currentAppData.dob) formData.append('dob', currentAppData.dob);
+      if (currentAppData.age) formData.append('age', currentAppData.age);
+      if (currentAppData.gender) formData.append('gender', currentAppData.gender);
+      if (currentAppData.studyType) formData.append('studyType', currentAppData.studyType);
+      if (currentAppData.level) formData.append('level', currentAppData.level);
       if (currentAppData.phone) formData.append('phone', currentAppData.phone);
       if (currentAppData.secondaryTeam) formData.append('secondaryTeam', currentAppData.secondaryTeam);
       if (currentAppData.essayWhy) formData.append('essayWhy', currentAppData.essayWhy);
@@ -148,6 +174,10 @@ export default function Dashboard() {
                   department: res.data.department || '',
                   programme: res.data.programme || '',
                   dob: res.data.dob || '',
+                  age: res.data.age || '',
+                  gender: res.data.gender || '',
+                  studyType: res.data.studyType || '',
+                  level: res.data.level || '',
                   phone: res.data.phone || '',
                   secondaryTeam: res.data.secondaryTeam || '',
                   essayWhy: res.data.essayWhy || '',
@@ -160,7 +190,8 @@ export default function Dashboard() {
           } else {
             // Status is submitted - clear form data to ensure dashboard view
             setAppData({
-              fullName: '', hostel: '', department: '', programme: '', dob: '', phone: '',
+              fullName: '', hostel: '', department: '', programme: '', dob: '', age: '', gender: '',
+              studyType: '', level: '', phone: '',
               secondaryTeam: '', essayWhy: '', essaySkills: '', terms: false
             });
           }
@@ -195,6 +226,27 @@ export default function Dashboard() {
     }
     if (!appData.hostel || appData.hostel.trim().length < 2) {
       newErrors.hostel = 'Hostel/Residence is required';
+    }
+    if (!appData.dob) {
+      newErrors.dob = 'Date of birth is required';
+    }
+    if (!appData.gender) {
+      newErrors.gender = 'Gender is required';
+    }
+    if (!appData.studyType) {
+      newErrors.studyType = 'Please select your study type';
+    }
+    if (appData.studyType === 'Undergraduate' && !appData.level) {
+      newErrors.level = 'Level is required for undergraduate students';
+    }
+    if (appData.studyType === 'Undergraduate' && appData.level) {
+      const levelNum = parseInt(appData.level);
+      if (isNaN(levelNum) || levelNum < 100 || levelNum > 400) {
+        newErrors.level = 'Level must be between 100 and 400';
+      }
+    }
+    if (appData.studyType && !appData.programme) {
+      newErrors.programme = 'Programme is required';
     }
     if (appData.phone && appData.phone.length > 0) {
       const phoneRegex = /^[0-9+\-\s()]+$/;
@@ -318,6 +370,10 @@ export default function Dashboard() {
       formData.append('department', appData.department.trim());
       formData.append('programme', (appData.programme || '').trim());
       formData.append('dob', appData.dob || '');
+      formData.append('age', appData.age || '');
+      formData.append('gender', appData.gender || '');
+      formData.append('studyType', appData.studyType || '');
+      formData.append('level', (appData.level || '').trim());
       formData.append('phone', (appData.phone || '').trim());
       formData.append('secondaryTeam', appData.secondaryTeam);
       formData.append('essayWhy', appData.essayWhy.trim());
@@ -482,6 +538,25 @@ export default function Dashboard() {
                       <div className="col-md-6 mb-2">
                         <strong>Phone:</strong> {application?.phone || 'N/A'}
                       </div>
+                      <div className="col-md-6 mb-2">
+                        <strong>Date of Birth:</strong> {application?.dob ? new Date(application?.dob).toLocaleDateString() : 'N/A'}
+                      </div>
+                      <div className="col-md-6 mb-2">
+                        <strong>Age:</strong> {application?.age || 'N/A'}
+                      </div>
+                      <div className="col-md-6 mb-2">
+                        <strong>Gender:</strong> {application?.gender || 'N/A'}
+                      </div>
+                      {application?.studyType && (
+                        <div className="col-md-6 mb-2">
+                          <strong>Study Type:</strong> {application?.studyType}
+                        </div>
+                      )}
+                      {application?.studyType === 'Undergraduate' && application?.level && (
+                        <div className="col-md-6 mb-2">
+                          <strong>Level:</strong> {application?.level}
+                        </div>
+                      )}
                       {application?.programme && (
                         <div className="col-md-6 mb-2">
                           <strong>Programme:</strong> {application?.programme}
@@ -779,6 +854,112 @@ export default function Dashboard() {
                             guideText="Enter your hostel name or residential address"
                         />
                     </div>
+                    <div className="col-md-6">
+                        <FormField 
+                            label="Date of Birth" 
+                            type="date"
+                            value={appData.dob} 
+                            onChange={e => handleDobChange(e.target.value)}
+                            tooltipText="Your age will be automatically calculated."
+                            required
+                            error={errors.dob}
+                            guideText="Select your date of birth"
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <FormField 
+                            label="Age" 
+                            type="number"
+                            value={appData.age} 
+                            disabled
+                            tooltipText="This is automatically calculated from your date of birth."
+                            error={errors.age}
+                            guideText="Auto-calculated from date of birth"
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <FormField 
+                            label="Gender" 
+                            type="select"
+                            options={['Male', 'Female', 'Other', 'Prefer not to say']}
+                            value={appData.gender} 
+                            onChange={e => {
+                              setAppData({...appData, gender: e.target.value});
+                              if (errors.gender) setErrors({...errors, gender: null});
+                            }}
+                            tooltipText="This information helps us ensure diversity in our team."
+                            required
+                            error={errors.gender}
+                            guideText="Select your gender"
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <FormField 
+                            label="Study Type" 
+                            type="select"
+                            options={['Undergraduate', 'Post-graduate']}
+                            value={appData.studyType} 
+                            onChange={e => {
+                              setAppData({...appData, studyType: e.target.value, level: ''});
+                              if (errors.studyType) setErrors({...errors, studyType: null, level: null});
+                            }}
+                            tooltipText="Select whether you are an undergraduate or post-graduate student."
+                            required
+                            error={errors.studyType}
+                            guideText="Select your study type"
+                        />
+                    </div>
+                    {appData.studyType === 'Undergraduate' && (
+                      <>
+                        <div className="col-md-6">
+                            <FormField 
+                                label="Level (100-400)" 
+                                type="number"
+                                value={appData.level} 
+                                onChange={e => {
+                                  setAppData({...appData, level: e.target.value});
+                                  if (errors.level) setErrors({...errors, level: null});
+                                }}
+                                tooltipText="Enter your current level (100, 200, 300, or 400)."
+                                required
+                                error={errors.level}
+                                guideText="Enter your level (e.g., 100, 200, 300, 400)"
+                                min="100"
+                                max="400"
+                            />
+                        </div>
+                        <div className="col-md-6">
+                            <FormField 
+                                label="Programme" 
+                                value={appData.programme} 
+                                onChange={e => {
+                                  setAppData({...appData, programme: e.target.value});
+                                  if (errors.programme) setErrors({...errors, programme: null});
+                                }}
+                                tooltipText="Enter your programme of study."
+                                required
+                                error={errors.programme}
+                                guideText="Enter your programme (e.g., BSc Computer Science)"
+                            />
+                        </div>
+                      </>
+                    )}
+                    {appData.studyType === 'Post-graduate' && (
+                      <div className="col-md-6">
+                          <FormField 
+                              label="Programme" 
+                              value={appData.programme} 
+                              onChange={e => {
+                                setAppData({...appData, programme: e.target.value});
+                                if (errors.programme) setErrors({...errors, programme: null});
+                              }}
+                              tooltipText="Enter your programme of study."
+                              required
+                              error={errors.programme}
+                              guideText="Enter your programme (e.g., MSc Computer Science)"
+                          />
+                      </div>
+                    )}
                   </div>
                   <div className="text-end mt-4">
                     <button 
@@ -999,3 +1180,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

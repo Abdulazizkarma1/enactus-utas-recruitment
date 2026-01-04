@@ -24,7 +24,7 @@ const upload = multer({ storage: storage });
 // Create/Update Application (Supports Drafts)
 router.post('/submit', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), async (req, res) => {
     try {
-        const { userId, fullName, hostel, department, programme, dob, phone, secondaryTeam, essayWhy, essaySkills } = req.body;
+        const { userId, fullName, hostel, department, programme, dob, age, gender, studyType, level, phone, secondaryTeam, essayWhy, essaySkills } = req.body;
 
         // Validate required fields
         if (!userId) {
@@ -41,6 +41,10 @@ router.post('/submit', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), 
             department: department.trim(),
             programme: programme ? programme.trim() : '',
             dob: dob || null,
+            age: age ? parseInt(age) : null,
+            gender: gender || null,
+            studyType: studyType || null,
+            level: level ? level.trim() : null,
             phone: phone ? phone.trim() : '',
             secondaryTeam,
             essayWhy: essayWhy.trim(),
@@ -77,7 +81,7 @@ router.post('/submit', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), 
 // Save Draft (Auto-save)
 router.post('/draft', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), async (req, res) => {
     try {
-        const { userId, fullName, hostel, department, programme, dob, phone, secondaryTeam, essayWhy, essaySkills } = req.body;
+        const { userId, fullName, hostel, department, programme, dob, age, gender, studyType, level, phone, secondaryTeam, essayWhy, essaySkills } = req.body;
 
         if (!userId) {
             return res.status(400).json({ msg: "User ID is required" });
@@ -93,6 +97,10 @@ router.post('/draft', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), a
         if (department) updateData.department = department.trim();
         if (programme) updateData.programme = programme.trim();
         if (dob) updateData.dob = dob;
+        if (age) updateData.age = parseInt(age);
+        if (gender) updateData.gender = gender;
+        if (studyType) updateData.studyType = studyType;
+        if (level) updateData.level = level.trim();
         if (phone) updateData.phone = phone.trim();
         if (secondaryTeam) updateData.secondaryTeam = secondaryTeam;
         if (essayWhy) updateData.essayWhy = essayWhy.trim();
