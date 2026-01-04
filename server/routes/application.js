@@ -37,12 +37,15 @@ router.post('/submit', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), 
             status: 'submitted'
         };
 
-        // Handle file uploads
+        // Handle file uploads - store only filename (not full path)
         if (req.files && req.files.profilePic) {
-            updateData.profilePic = req.files.profilePic[0].path;
+            // Extract just the filename from the path
+            const filePath = req.files.profilePic[0].path;
+            updateData.profilePic = filePath.replace(/^uploads[\/\\]/, ''); // Remove 'uploads/' prefix if present
         }
         if (req.files && req.files.cv) {
-            updateData.cv = req.files.cv[0].path;
+            const filePath = req.files.cv[0].path;
+            updateData.cv = filePath.replace(/^uploads[\/\\]/, ''); // Remove 'uploads/' prefix if present
         }
 
         // Upsert: Update if exists, Create if new
@@ -83,12 +86,15 @@ router.post('/draft', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), a
         if (essayWhy) updateData.essayWhy = essayWhy.trim();
         if (essaySkills) updateData.essaySkills = essaySkills.trim();
 
-        // Handle file uploads
+        // Handle file uploads - store only filename (not full path)
         if (req.files && req.files.profilePic) {
-            updateData.profilePic = req.files.profilePic[0].path;
+            // Extract just the filename from the path
+            const filePath = req.files.profilePic[0].path;
+            updateData.profilePic = filePath.replace(/^uploads[\/\\]/, ''); // Remove 'uploads/' prefix if present
         }
         if (req.files && req.files.cv) {
-            updateData.cv = req.files.cv[0].path;
+            const filePath = req.files.cv[0].path;
+            updateData.cv = filePath.replace(/^uploads[\/\\]/, ''); // Remove 'uploads/' prefix if present
         }
 
         const app = await Application.findOneAndUpdate(
