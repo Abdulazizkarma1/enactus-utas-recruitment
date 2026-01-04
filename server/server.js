@@ -20,6 +20,16 @@ const fs = require('fs');
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log(`[Server] Created uploads directory: ${uploadsDir}`);
+} else {
+    console.log(`[Server] Uploads directory exists: ${uploadsDir}`);
+    // Log files in uploads directory on startup
+    try {
+        const files = fs.readdirSync(uploadsDir);
+        console.log(`[Server] Files in uploads directory (${files.length}): ${files.slice(0, 10).join(', ')}${files.length > 10 ? '...' : ''}`);
+    } catch (err) {
+        console.error(`[Server] Error reading uploads directory: ${err.message}`);
+    }
 }
 
 // Serve uploaded files - use absolute path and set proper headers
