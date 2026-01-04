@@ -546,7 +546,7 @@ export default function AdminDashboard() {
                               <td>
                                 {app.cv ? (
                                   <a 
-                                    href={`${API_URL}/${app.cv}`} 
+                                    href={`${API_URL}/uploads/${app.cv}`} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="btn btn-sm btn-info"
