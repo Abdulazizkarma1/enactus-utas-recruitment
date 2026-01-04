@@ -32,67 +32,44 @@ if (!fs.existsSync(uploadsDir)) {
     }
 }
 
-// Route handler for file access - handles /uploads/:filename requests
+// File serving route - Simple and reliable approach
 app.get('/uploads/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path.join(uploadsDir, filename);
-    const resolvedFilePath = path.resolve(filePath);
-    const resolvedUploadsDir = path.resolve(uploadsDir);
-    
-    // Security: prevent directory traversal
-    if (!resolvedFilePath.startsWith(resolvedUploadsDir)) {
-        return res.status(403).json({ msg: 'Access denied' });
-    }
-    
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-        console.log(`[File Request] File not found: ${filename}`);
-        // List available files for debugging
-        try {
-            const files = fs.readdirSync(uploadsDir);
-            console.log(`[File Request] Available files (${files.length}): ${files.slice(0, 5).join(', ')}${files.length > 5 ? '...' : ''}`);
-        } catch (err) {
-            console.error(`[File Request] Error reading directory: ${err.message}`);
+    try {
+        const filename = req.params.filename;
+        
+        // Validate filename (prevent directory traversal)
+        if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+            return res.status(403).json({ msg: 'Invalid filename' });
         }
-        return res.status(404).json({ 
-            msg: 'File not found',
-            filename: filename
-        });
-    }
-    
-    // Set appropriate content type
-    const ext = path.extname(filename).toLowerCase();
-    const contentTypes = {
-        '.pdf': 'application/pdf',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp'
-    };
-    const contentType = contentTypes[ext] || 'application/octet-stream';
-    
-    // Set headers
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    
-    // Send file
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            console.error(`[File Request] Error sending file: ${err.message}`);
-            if (!res.headersSent) {
-                res.status(500).json({ msg: 'Error serving file', error: err.message });
+        
+        // Construct absolute file path
+        const filePath = path.resolve(uploadsDir, filename);
+        const uploadsDirResolved = path.resolve(uploadsDir);
+        
+        // Security: ensure file is within uploads directory
+        if (!filePath.startsWith(uploadsDirResolved)) {
+            return res.status(403).json({ msg: 'Access denied' });
+        }
+        
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            console.log(`[File] Not found: ${filename}`);
+            console.log(`[File] Looking in: ${uploadsDirResolved}`);
+            // List available files for debugging
+            try {
+                const files = fs.readdirSync(uploadsDirResolved);
+                console.log(`[File] Available files (${files.length}): ${files.slice(0, 10).join(', ')}`);
+            } catch (err) {
+                console.error(`[File] Error reading directory: ${err.message}`);
             }
+            return res.status(404).json({ 
+                msg: 'File not found',
+                filename: filename
+            });
         }
-    });
-});
-
-// Serve uploaded files - static middleware as additional fallback
-app.use('/uploads', express.static(uploadsDir, {
-    setHeaders: (res, filePath) => {
-        // Set appropriate content type based on file extension
-        const ext = path.extname(filePath).toLowerCase();
+        
+        // Determine content type
+        const ext = path.extname(filename).toLowerCase();
         const contentTypes = {
             '.pdf': 'application/pdf',
             '.jpg': 'image/jpeg',
@@ -101,14 +78,33 @@ app.use('/uploads', express.static(uploadsDir, {
             '.gif': 'image/gif',
             '.webp': 'image/webp'
         };
-        if (contentTypes[ext]) {
-            res.setHeader('Content-Type', contentTypes[ext]);
-        }
-        // Allow CORS for file access
+        const contentType = contentTypes[ext] || 'application/octet-stream';
+        
+        // Set response headers
+        res.setHeader('Content-Type', contentType);
         res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET');
+        res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+        
+        // Send the file
+        console.log(`[File] Serving: ${filename} from ${filePath}`);
+        res.sendFile(filePath, (err) => {
+            if (err) {
+                console.error(`[File] Error sending file ${filename}:`, err.message);
+                if (!res.headersSent) {
+                    res.status(500).json({ msg: 'Error serving file', error: err.message });
+                }
+            } else {
+                console.log(`[File] Successfully served: ${filename}`);
+            }
+        });
+    } catch (error) {
+        console.error('[File] Unexpected error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ msg: 'Server error', error: error.message });
+        }
     }
-}));
+});
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
