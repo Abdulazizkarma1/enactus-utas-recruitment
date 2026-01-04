@@ -32,28 +32,7 @@ if (!fs.existsSync(uploadsDir)) {
     }
 }
 
-// Serve uploaded files - use absolute path and set proper headers
-app.use('/uploads', express.static(uploadsDir, {
-    setHeaders: (res, filePath) => {
-        // Set appropriate content type based on file extension
-        const ext = path.extname(filePath).toLowerCase();
-        const contentTypes = {
-            '.pdf': 'application/pdf',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif'
-        };
-        if (contentTypes[ext]) {
-            res.setHeader('Content-Type', contentTypes[ext]);
-        }
-        // Allow CORS for file access
-        res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET');
-    }
-}));
-
-// Fallback route for file access (in case static middleware doesn't catch it)
+// Route handler for file access (primary method - handles file serving with better error handling)
 app.get('/uploads/:filename', (req, res) => {
     const filename = req.params.filename;
     const filePath = path.join(uploadsDir, filename);
@@ -115,6 +94,27 @@ app.get('/uploads/:filename', (req, res) => {
         }
     });
 });
+
+// Serve uploaded files - use static middleware as fallback (for direct file access)
+app.use('/uploads', express.static(uploadsDir, {
+    setHeaders: (res, filePath) => {
+        // Set appropriate content type based on file extension
+        const ext = path.extname(filePath).toLowerCase();
+        const contentTypes = {
+            '.pdf': 'application/pdf',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif'
+        };
+        if (contentTypes[ext]) {
+            res.setHeader('Content-Type', contentTypes[ext]);
+        }
+        // Allow CORS for file access
+        res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+    }
+}));
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
