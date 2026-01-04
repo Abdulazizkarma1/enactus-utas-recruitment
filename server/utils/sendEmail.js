@@ -13,13 +13,13 @@ const sendEmail = async (to, subject, text) => {
 
     // 2. Send the mail
     await transporter.sendMail({
-      from: '"Enactus CKT-UTAS" <no-reply@enactus.org>',
+      from: '"Enactus UTAS" <no-reply@enactus.org>',
       to: to,
       subject: subject,
       text: text,
       html: `
         <div style="font-family: Arial, sans-serif; color: #333;">
-          <h2 style="color: #800000;">Enactus CKT-UTAS</h2>
+          <h2 style="color: #800000;">Enactus UTAS</h2>
           <p>${text}</p>
           <br/>
           <p>Regards,<br/>The Recruitment Team</p>

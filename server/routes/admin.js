@@ -72,7 +72,7 @@ router.get('/pdf/:appId', async (req, res) => {
         // --- PDF CONTENT DESIGN ---
 
         // Header
-        doc.fontSize(20).fillColor('#800000').text('ENACTUS CKT-UTAS', { align: 'center' });
+        doc.fontSize(20).fillColor('#800000').text('ENACTUS UTAS', { align: 'center' });
         doc.fontSize(12).fillColor('black').text('Recruitment Application Summary', { align: 'center' });
         doc.moveDown();
 
@@ -127,8 +127,8 @@ router.put('/status/:id', async (req, res) => {
         if (status === 'interview') {
             message = `Dear ${app.fullName}, we are pleased to inform you that your application has been moved to the INTERVIEW stage. Check your dashboard for details.`;
         } else if (status === 'recruited') {
-            subject = "Welcome to Enactus CKT-UTAS!";
-            message = `Congratulations ${app.fullName}! You have been officially recruited into Enactus CKT-UTAS.`;
+            subject = "Welcome to Enactus UTAS!";
+            message = `Congratulations ${app.fullName}! You have been officially recruited into Enactus UTAS.`;
         } else if (status === 'declined') {
             message = `Dear ${app.fullName}, thank you for your interest. Unfortunately, we are not proceeding with your application at this time.`;
         }
@@ -141,6 +141,149 @@ router.put('/status/:id', async (req, res) => {
         res.json(app);
     } catch (err) {
         res.status(500).json(err);
+    }
+});
+
+// Get Statistics for Dashboard
+router.get('/statistics', async (req, res) => {
+    try {
+        // Total applications
+        const totalApplications = await Application.countDocuments();
+        
+        // Applications by status
+        const statusCounts = await Application.aggregate([
+            {
+                $group: {
+                    _id: '$status',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+        
+        // Applications per day (last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const applicationsPerDay = await Application.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: thirtyDaysAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+        
+        // Applications per month (last 12 months)
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+        
+        const applicationsPerMonth = await Application.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: twelveMonthsAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: '%Y-%m', date: '$createdAt' }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+        
+        // Voucher statistics
+        const totalVouchers = await Voucher.countDocuments();
+        const usedVouchers = await Voucher.countDocuments({ isUsed: true });
+        const availableVouchers = totalVouchers - usedVouchers;
+        
+        // Vouchers used per day (last 30 days) - use updatedAt when isUsed is true
+        const vouchersUsedPerDay = await Voucher.aggregate([
+            {
+                $match: {
+                    isUsed: true,
+                    updatedAt: { $gte: thirtyDaysAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: '%Y-%m-%d', date: '$updatedAt' }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+        
+        // Vouchers used per month (last 12 months)
+        const vouchersUsedPerMonth = await Voucher.aggregate([
+            {
+                $match: {
+                    isUsed: true,
+                    updatedAt: { $gte: twelveMonthsAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: '%Y-%m', date: '$updatedAt' }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+        
+        // Format status counts
+        const statusMap = {};
+        statusCounts.forEach(item => {
+            statusMap[item._id || 'submitted'] = item.count;
+        });
+        
+        res.json({
+            applications: {
+                total: totalApplications,
+                byStatus: {
+                    new: statusMap['New'] || 0,
+                    draft: statusMap['draft'] || 0,
+                    submitted: statusMap['submitted'] || 0,
+                    interview: statusMap['interview'] || 0,
+                    recruited: statusMap['recruited'] || 0,
+                    declined: statusMap['declined'] || 0
+                },
+                perDay: applicationsPerDay,
+                perMonth: applicationsPerMonth
+            },
+            vouchers: {
+                total: totalVouchers,
+                used: usedVouchers,
+                available: availableVouchers,
+                usedPerDay: vouchersUsedPerDay,
+                usedPerMonth: vouchersUsedPerMonth
+            }
+        });
+    } catch (err) {
+        console.error('Statistics error:', err);
+        res.status(500).json({ msg: err.message });
     }
 });
 

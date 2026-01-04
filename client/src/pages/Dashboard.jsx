@@ -165,13 +165,8 @@ export default function Dashboard() {
             });
           }
         } else {
-          // No application exists, check if user has seen checklist
-          const hasSeenChecklist = sessionStorage.getItem('hasSeenChecklist');
-          if (!hasSeenChecklist) {
-            navigate('/checklist');
-            return;
-          }
-          // No application, status remains 'New'
+          // No application exists - user can start filling the form
+          // Don't redirect to checklist, let them start the application directly
           setStatus('New');
         }
         setIsLoading(false);
@@ -392,8 +387,8 @@ export default function Dashboard() {
     const messages = {
       'submitted': 'Your application has been received and is under review. We will contact you via email if you are selected for the next stage.',
       'interview': 'Congratulations! Your application has been moved to the interview stage. We will contact you soon with interview details.',
-      'recruited': 'Congratulations! You have been officially recruited into Enactus CKT-UTAS. Welcome to the team!',
-      'declined': 'Thank you for your interest in joining Enactus CKT-UTAS. Unfortunately, we are not proceeding with your application at this time.'
+      'recruited': 'Congratulations! You have been officially recruited into Enactus UTAS. Welcome to the team!',
+      'declined': 'Thank you for your interest in joining Enactus UTAS. Unfortunately, we are not proceeding with your application at this time.'
     };
     return messages[status] || 'Your application is being processed.';
   };
@@ -425,8 +420,8 @@ export default function Dashboard() {
             <div className="d-flex align-items-center mb-4">
               <div style={{width:'50px', height:'50px', background:'#800000', borderRadius:'50%', marginRight:'15px'}}></div>
               <div className="flex-grow-1">
-                <h3 className="m-0 fw-bold" style={{color:'#800000'}}>Enactus CKT-UTAS</h3>
-                <small className="text-muted">2025 Recruitment Portal</small>
+                <h3 className="m-0 fw-bold" style={{color:'#800000'}}>Enactus UTAS</h3>
+                <small className="text-muted">2026 Recruitment Portal</small>
               </div>
               <div>
                 <span className={`badge ${statusBadge.class} fs-6 px-3 py-2`}>
@@ -511,19 +506,48 @@ export default function Dashboard() {
 
                 <hr />
 
-                {/* Essays */}
+                {/* Application Timeline/Progress */}
                 <div className="mb-4">
-                  <h5 style={{color: '#800000'}}>Why do you want to join Enactus CKT-UTAS?</h5>
-                  <p className="text-muted" style={{whiteSpace: 'pre-wrap', lineHeight: '1.8'}}>
-                    {application?.essayWhy || 'N/A'}
-                  </p>
-                </div>
-
-                <div className="mb-4">
-                  <h5 style={{color: '#800000'}}>What unique skills do you bring?</h5>
-                  <p className="text-muted" style={{whiteSpace: 'pre-wrap', lineHeight: '1.8'}}>
-                    {application?.essaySkills || 'N/A'}
-                  </p>
+                  <h5 style={{color: '#800000'}}>Application Progress</h5>
+                  <div className="mt-3">
+                    <div className="d-flex align-items-center mb-3">
+                      <div className={`rounded-circle d-flex align-items-center justify-content-center me-3 ${status === 'submitted' || status === 'interview' || status === 'recruited' || status === 'declined' ? 'bg-success' : 'bg-secondary'}`} style={{width: '40px', height: '40px', color: 'white', fontWeight: 'bold'}}>
+                        ✓
+                      </div>
+                      <div className="flex-grow-1">
+                        <strong>Application Submitted</strong>
+                        <div className="text-muted small">
+                          {application?.createdAt ? new Date(application?.createdAt).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {status === 'interview' && (
+                      <div className="d-flex align-items-center mb-3">
+                        <div className="rounded-circle d-flex align-items-center justify-content-center me-3 bg-warning" style={{width: '40px', height: '40px', color: 'white', fontWeight: 'bold'}}>
+                          ⏳
+                        </div>
+                        <div className="flex-grow-1">
+                          <strong>Interview Stage</strong>
+                          <div className="text-muted small">Your application is under review for interview</div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(status === 'recruited' || status === 'declined') && (
+                      <div className="d-flex align-items-center mb-3">
+                        <div className={`rounded-circle d-flex align-items-center justify-content-center me-3 ${status === 'recruited' ? 'bg-success' : 'bg-danger'}`} style={{width: '40px', height: '40px', color: 'white', fontWeight: 'bold'}}>
+                          {status === 'recruited' ? '✓' : '✗'}
+                        </div>
+                        <div className="flex-grow-1">
+                          <strong>{status === 'recruited' ? 'Recruited' : 'Decision Made'}</strong>
+                          <div className="text-muted small">
+                            {status === 'recruited' ? 'Congratulations! Welcome to the team!' : 'Thank you for your interest'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <hr />
@@ -547,12 +571,56 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Submission Date */}
-                {application?.createdAt && (
-                  <div className="text-muted small">
-                    <strong>Submitted on:</strong> {new Date(application?.createdAt).toLocaleString()}
+                {/* Important Information */}
+                <div className="mb-4">
+                  <h5 style={{color: '#800000'}}>Important Information</h5>
+                  <div className="alert alert-info">
+                    <h6 className="alert-heading"><i className="bi bi-info-circle-fill me-2"></i>What's Next?</h6>
+                    {status === 'submitted' && (
+                      <p className="mb-0 small">
+                        Your application has been received and is under review. We will contact you via email or phone if you're selected for the next stage. Please check this dashboard regularly for updates.
+                      </p>
+                    )}
+                    {status === 'interview' && (
+                      <p className="mb-0 small">
+                        <strong>Interview Stage:</strong> You will be contacted soon with interview details. Please ensure your contact information is up to date.
+                      </p>
+                    )}
+                    {status === 'recruited' && (
+                      <p className="mb-0 small">
+                        <strong>Welcome to Enactus UTAS!</strong> You will receive further instructions via email. Congratulations on joining our team!
+                      </p>
+                    )}
+                    {status === 'declined' && (
+                      <p className="mb-0 small">
+                        Thank you for your interest in Enactus UTAS. We encourage you to apply again in the future.
+                      </p>
+                    )}
                   </div>
-                )}
+                </div>
+
+                {/* Contact Information */}
+                <div className="mb-4">
+                  <h5 style={{color: '#800000'}}>Contact & Support</h5>
+                  <div className="row">
+                    <div className="col-md-6 mb-2">
+                      <strong>Application ID:</strong> 
+                      <code className="ms-2">{application?._id?.slice(-8) || 'N/A'}</code>
+                    </div>
+                    <div className="col-md-6 mb-2">
+                      <strong>Submitted on:</strong> 
+                      <span className="ms-2">
+                        {application?.createdAt ? new Date(application?.createdAt).toLocaleString() : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <small className="text-muted">
+                      <i className="bi bi-envelope me-1"></i>
+                      For inquiries, please contact the recruitment team through official channels.
+                    </small>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -597,8 +665,8 @@ export default function Dashboard() {
           <div className="d-flex align-items-center mb-4">
              <div style={{width:'50px', height:'50px', background:'#800000', borderRadius:'50%', marginRight:'15px'}}></div>
              <div>
-                <h3 className="m-0 fw-bold" style={{color:'#800000'}}>Enactus CKT-UTAS</h3>
-                <small className="text-muted">2025 Recruitment Portal</small>
+                <h3 className="m-0 fw-bold" style={{color:'#800000'}}>Enactus UTAS</h3>
+                <small className="text-muted">2026 Recruitment Portal</small>
              </div>
           </div>
 
@@ -781,7 +849,7 @@ export default function Dashboard() {
                   </div>
                   
                   <FormField 
-                    label="Why do you want to join Enactus CKT-UTAS?"
+                    label="Why do you want to join Enactus UTAS?"
                     rows={6}
                     value={appData.essayWhy}
                     onChange={e => {

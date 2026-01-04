@@ -1,6 +1,6 @@
-# Enactus CKT-UTAS Recruitment Portal
+# Enactus UTAS Recruitment Portal
 
-A full-stack recruitment application for Enactus CKT-UTAS built with React, Node.js, Express, and MongoDB.
+A full-stack recruitment application for Enactus UTAS built with React, Node.js, Express, and MongoDB.
 
 ## Features
 

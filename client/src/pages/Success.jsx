@@ -47,7 +47,7 @@ export default function Success() {
             {/* Success Message */}
             <h2 className="mb-3" style={{color: '#800000', fontSize: '1.5rem'}}>Application Submitted Successfully!</h2>
             <p className="lead mb-4">
-              Thank you for your interest in joining <strong>Enactus CKT-UTAS</strong>.
+              Thank you for your interest in joining <strong>Enactus UTAS</strong>.
             </p>
             
             <div className="alert alert-info" role="alert">
@@ -79,7 +79,7 @@ export default function Success() {
 
             <div className="mt-5 pt-4 border-top">
               <small className="text-muted">
-                Need help? Contact us at <a href="mailto:support@enactus.com" style={{color: '#800000'}}>support@enactus.com</a>
+                Need help? Contact us at <a href="" style={{color: '#800000'}}>+233506063217</a>
               </small>
             </div>
           </div>
