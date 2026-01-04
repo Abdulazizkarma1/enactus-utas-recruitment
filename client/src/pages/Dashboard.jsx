@@ -558,7 +558,7 @@ export default function Dashboard() {
                   <div className="d-flex gap-3">
                     {application?.cv ? (
                       <a 
-                        href={`${API_URL}/${application?.cv}`} 
+                        href={`${API_URL}/uploads/${application?.cv}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="btn btn-outline-primary"
