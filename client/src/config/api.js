@@ -21,6 +21,16 @@ axios.interceptors.request.use(
     }
 );
 
+// Helper function to get file URL (handles both old and new path formats)
+export const getFileUrl = (filePath) => {
+    if (!filePath) return '';
+    // If path already includes 'uploads/', use it as is, otherwise add it
+    if (filePath.startsWith('uploads/') || filePath.startsWith('/uploads/')) {
+        return `${normalizedURL}/${filePath.replace(/^\/+/, '')}`;
+    }
+    return `${normalizedURL}/uploads/${filePath}`;
+};
+
 export const API_URL = normalizedURL;
 export default normalizedURL;
 

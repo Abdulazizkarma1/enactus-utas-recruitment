@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import API_URL from '../config/api';
+import API_URL, { getFileUrl } from '../config/api';
 import { useInactivityLogout } from '../hooks/useInactivityLogout';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -499,7 +499,7 @@ export default function AdminDashboard() {
                               <td>
                                 {app.profilePic ? (
                                   <img 
-                                    src={`${API_URL}/uploads/${app.profilePic}`} 
+                                    src={getFileUrl(app.profilePic)} 
                                     alt="profile" 
                                     width="50" 
                                     height="50"
@@ -546,7 +546,7 @@ export default function AdminDashboard() {
                               <td>
                                 {app.cv ? (
                                   <a 
-                                    href={`${API_URL}/uploads/${app.cv}`} 
+                                    href={getFileUrl(app.cv)} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="btn btn-sm btn-info"

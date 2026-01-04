@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import FormField from '../components/FormField';
-import API_URL from '../config/api';
+import API_URL, { getFileUrl } from '../config/api';
 import { useInactivityLogout } from '../hooks/useInactivityLogout';
 
 export default function Dashboard() {
@@ -446,7 +446,7 @@ export default function Dashboard() {
                   <div className="col-12 col-md-3 text-center mb-3 mb-md-0">
                     {application?.profilePic ? (
                       <img 
-                        src={`${API_URL}/uploads/${application?.profilePic}`} 
+                        src={getFileUrl(application?.profilePic)} 
                         alt="Profile" 
                         className="img-fluid rounded-circle"
                         style={{width: '120px', height: '120px', objectFit: 'cover', border: '3px solid #800000'}}
@@ -558,7 +558,7 @@ export default function Dashboard() {
                   <div className="d-flex gap-3">
                     {application?.cv ? (
                       <a 
-                        href={`${API_URL}/uploads/${application?.cv}`} 
+                        href={getFileUrl(application?.cv)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="btn btn-outline-primary"
