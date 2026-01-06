@@ -16,7 +16,7 @@ export default function Dashboard() {
     secondaryTeam: '', essayWhy: '', essaySkills: '', terms: false
   });
   const [files, setFiles] = useState({ profilePic: null, cv: null });
-  const [status, setStatus] = useState('new');
+  const [status, setStatus] = useState(null); // Start with null to force status check
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [application, setApplication] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -168,11 +168,15 @@ export default function Dashboard() {
     
     axios.get(`${API_URL}/api/application/${currentUserId}`)
       .then(res => {
+        // CRITICAL: Set status FIRST before anything else
+        // This determines whether to show form or dashboard
         if(res.data && res.data.status) {
           const appStatus = normalizeStatus(res.data.status);
-          console.log('Application status loaded:', appStatus); // Debug log
+          console.log('[Dashboard] Application status loaded:', appStatus); // Debug log
+          
+          // Set status IMMEDIATELY - this is the most important step
+          setStatus(appStatus);
           setApplication(res.data);
-          setStatus(appStatus); // Set status immediately - this determines form vs dashboard
           
           // Only set form data if status is 'new' or 'draft' (editable)
           // If submitted, don't load form data - user should see dashboard
@@ -206,15 +210,17 @@ export default function Dashboard() {
               studyType: '', level: '', phone: '',
               secondaryTeam: '', essayWhy: '', essaySkills: '', terms: false
             });
+            setFiles({ profilePic: null, cv: null });
           }
         } else {
           // No application exists - user can start filling the form
+          console.log('[Dashboard] No application found, setting status to new');
           setStatus('new');
         }
         setIsLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching application:', err);
+        console.error('[Dashboard] Error fetching application:', err);
         setIsLoading(false);
         // On error, assume new application
         setStatus('new');
@@ -409,8 +415,11 @@ export default function Dashboard() {
 
       // Check if submission was successful
       if (response.data && response.data.msg) {
-        // Immediately update status to prevent form from showing
-        setStatus('submitted');
+        // CRITICAL: Immediately update status to prevent form from showing
+        // This must happen BEFORE any navigation or delay
+        const submittedStatus = normalizeStatus(response.data.application?.status || 'submitted');
+        console.log('[Dashboard] Submission successful, setting status to:', submittedStatus);
+        setStatus(submittedStatus);
         setApplication(response.data.application || null);
         
         // Clear form data to ensure dashboard view
@@ -419,6 +428,9 @@ export default function Dashboard() {
           studyType: '', level: '', phone: '',
           secondaryTeam: '', essayWhy: '', essaySkills: '', terms: false
         });
+        
+        // Clear files
+        setFiles({ profilePic: null, cv: null });
         
         // Additional delay before redirect for smooth transition
         await new Promise(resolve => setTimeout(resolve, 800));
