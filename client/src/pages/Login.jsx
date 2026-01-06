@@ -1,12 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import API_URL from '../config/api';
 
 export default function Login() {
   const [form, setForm] = useState({ identifier: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Check if user just registered
+  useEffect(() => {
+    if (searchParams.get('registered') === 'true') {
+      setShowSuccessMessage(true);
+      // Remove the query parameter from URL
+      window.history.replaceState({}, '', '/');
+      // Hide message after 10 seconds
+      const timer = setTimeout(() => setShowSuccessMessage(false), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,7 +76,18 @@ export default function Login() {
       <div className="row justify-content-center w-100">
         <div className="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
           <div className="card p-3 p-md-4 mx-auto" style={{borderColor: '#800000', borderWidth: '2px'}}>
-            <h3 className="text-center mb-3" style={{color: '#800000', fontSize: '1.5rem'}}>Enactus Recruitment</h3>
+            <h3 className="text-center mb-3" style={{color: '#800000', fontSize: '1.5rem'}}>Enactus UTAS</h3>
+            <p className="text-center text-muted small mb-4">2026 Recruitment Portal</p>
+
+            {/* Success message after registration */}
+            {showSuccessMessage && (
+              <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <h6 className="alert-heading"><i className="bi bi-check-circle-fill me-2"></i>Account Created Successfully!</h6>
+                <p className="mb-2 small">You can now log in using your <strong>Student ID</strong> (or email) and <strong>password</strong> to start your application.</p>
+                <button type="button" className="btn-close" onClick={() => setShowSuccessMessage(false)}></button>
+              </div>
+            )}
+
             <p className="text-center text-muted small mb-4">Login with Student ID or Email</p>
 
             <form onSubmit={handleSubmit}>

@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import API_URL from '../config/api';
 
 export default function Register() {
-  const [step, setStep] = useState(1); // Step 1: Voucher validation, Step 2: Account creation
+  const [step, setStep] = useState(1); // Step 1: Voucher validation, Step 2: Account creation, Step 3: Success
   const [voucherData, setVoucherData] = useState({ serial: '', pin: '' });
   const [accountData, setAccountData] = useState({ studentId: '', email: '', password: '', confirmPassword: '' });
   const [isValidating, setIsValidating] = useState(false);
@@ -12,6 +12,7 @@ export default function Register() {
   const [voucherValid, setVoucherValid] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const navigate = useNavigate();
 
   // Step 1: Validate Voucher
@@ -90,10 +91,9 @@ export default function Register() {
       // Store student ID for pre-population in application form
       localStorage.setItem('registeredStudentId', accountData.studentId.trim());
       
-      setSuccessMessage('✅ Registration successful! Redirecting to login...');
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
+      // Show success step instead of redirecting immediately
+      setRegistrationSuccess(true);
+      setStep(3); // Move to success step
     } catch (err) {
       setErrors({ register: err.response?.data?.msg || 'Error registering. Please check your details and try again.' });
     } finally {
@@ -128,10 +128,24 @@ export default function Register() {
               <div className="text-center flex-fill">
                 <div className={`rounded-circle d-inline-flex align-items-center justify-content-center ${step >= 2 ? 'bg-success' : 'bg-secondary'} text-white`} 
                      style={{width: '40px', height: '40px', fontSize: '1.2rem', fontWeight: 'bold'}}>
-                  2
+                  {step >= 3 ? '✓' : '2'}
                 </div>
                 <div className="mt-2 small">Account</div>
               </div>
+              {step >= 3 && (
+                <>
+                  <div className="flex-fill d-flex align-items-center px-2">
+                    <div className="w-100 bg-success" style={{height: '3px'}}></div>
+                  </div>
+                  <div className="text-center flex-fill">
+                    <div className="rounded-circle d-inline-flex align-items-center justify-content-center bg-success text-white" 
+                         style={{width: '40px', height: '40px', fontSize: '1.2rem', fontWeight: 'bold'}}>
+                      ✓
+                    </div>
+                    <div className="mt-2 small">Success</div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Success Message */}
@@ -212,8 +226,56 @@ export default function Register() {
               </form>
             )}
 
+            {/* Step 3: Success Screen */}
+            {step === 3 && registrationSuccess && (
+              <div>
+                <div className="text-center mb-4">
+                  <div className="mb-4">
+                    <div className="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" 
+                         style={{width: '80px', height: '80px', fontSize: '3rem'}}>
+                      ✓
+                    </div>
+                  </div>
+                  <h4 className="text-success mb-3">Registration Successful!</h4>
+                  <p className="text-muted">Your account has been created successfully.</p>
+                </div>
+
+                <div className="alert alert-success border-start border-4 border-success mb-4">
+                  <h6 className="alert-heading"><i className="bi bi-info-circle-fill me-2"></i>What's Next?</h6>
+                  <p className="mb-2"><strong>You can now log in to start your application!</strong></p>
+                  <hr />
+                  <p className="mb-1"><strong>Login Credentials:</strong></p>
+                  <ul className="mb-0 small">
+                    <li><strong>Student ID:</strong> {accountData.studentId}</li>
+                    <li><strong>Email:</strong> {accountData.email}</li>
+                    <li><strong>Password:</strong> The password you just created</li>
+                  </ul>
+                </div>
+
+                <div className="alert alert-info border-start border-4 border-info mb-4">
+                  <h6 className="alert-heading"><i className="bi bi-lightbulb-fill me-2"></i>Important Instructions</h6>
+                  <p className="mb-2 small">To start your application:</p>
+                  <ol className="mb-0 small">
+                    <li>Click the "Go to Login" button below</li>
+                    <li>Enter your <strong>Student ID</strong> (or email) and <strong>password</strong></li>
+                    <li>After logging in, you'll be taken to the application form</li>
+                    <li>Fill out all required information and submit your application</li>
+                  </ol>
+                </div>
+
+                <button 
+                  onClick={() => navigate('/?registered=true')}
+                  className="btn w-100 btn-lg" 
+                  style={{backgroundColor: '#800000', color: 'white'}}
+                >
+                  <i className="bi bi-box-arrow-in-right me-2"></i>
+                  Go to Login
+                </button>
+              </div>
+            )}
+
             {/* Step 2: Account Creation */}
-            {step === 2 && (
+            {step === 2 && !registrationSuccess && (
               <form onSubmit={handleRegister}>
                 <div className="alert alert-success border-start border-4 border-success mb-4">
                   <h6 className="alert-heading"><i className="bi bi-check-circle-fill me-2"></i>Step 2: Create Your Account</h6>
