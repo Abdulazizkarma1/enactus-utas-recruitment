@@ -152,8 +152,8 @@ export default function Register() {
               )}
             </div>
 
-            {/* Success Message */}
-            {successMessage && (
+            {/* Success Message - Only show if not on success step */}
+            {successMessage && step !== 3 && (
               <div className="alert alert-success alert-dismissible fade show" role="alert">
                 <i className="bi bi-check-circle-fill me-2"></i>
                 {successMessage}
