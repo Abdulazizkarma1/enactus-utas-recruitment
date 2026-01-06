@@ -16,7 +16,7 @@ export default function Dashboard() {
     secondaryTeam: '', essayWhy: '', essaySkills: '', terms: false
   });
   const [files, setFiles] = useState({ profilePic: null, cv: null });
-  const [status, setStatus] = useState('New');
+  const [status, setStatus] = useState('new');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [application, setApplication] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +110,7 @@ export default function Dashboard() {
 
   // Debounced auto-save - only triggers on actual changes, not on every render
   useEffect(() => {
-    if (!user || status === 'submitted' || status === 'recruited' || status === 'declined') {
+    if (!user || isSubmittedStatus(status)) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
@@ -140,6 +140,18 @@ export default function Dashboard() {
     };
   }, [appData, files, status, user, saveDraft]);
 
+  // Normalize status to lowercase for consistent comparison
+  const normalizeStatus = (status) => {
+    if (!status) return 'new';
+    return String(status).toLowerCase().trim();
+  };
+
+  // Check if status indicates application is submitted (non-editable)
+  const isSubmittedStatus = (status) => {
+    const normalized = normalizeStatus(status);
+    return ['submitted', 'recruited', 'declined', 'interview'].includes(normalized);
+  };
+
   // Load application data - always reload when component mounts or user changes
   useEffect(() => {
     const currentUserId = user?.id;
@@ -156,15 +168,15 @@ export default function Dashboard() {
     
     axios.get(`${API_URL}/api/application/${currentUserId}`)
       .then(res => {
-        if(res.data) {
-          const appStatus = res.data.status || 'New';
+        if(res.data && res.data.status) {
+          const appStatus = normalizeStatus(res.data.status);
           console.log('Application status loaded:', appStatus); // Debug log
           setApplication(res.data);
           setStatus(appStatus); // Set status immediately - this determines form vs dashboard
           
-          // Only set form data if status is 'New' or 'draft' (editable)
+          // Only set form data if status is 'new' or 'draft' (editable)
           // If submitted, don't load form data - user should see dashboard
-          if (appStatus === 'New' || appStatus === 'draft') {
+          if (appStatus === 'new' || appStatus === 'draft') {
             setAppData(prev => {
               // Only update if current data is empty (initial state)
               if (!prev.fullName && !prev.department && !prev.essayWhy) {
@@ -197,8 +209,7 @@ export default function Dashboard() {
           }
         } else {
           // No application exists - user can start filling the form
-          // Don't redirect to checklist, let them start the application directly
-          setStatus('New');
+          setStatus('new');
         }
         setIsLoading(false);
       })
@@ -206,7 +217,7 @@ export default function Dashboard() {
         console.error('Error fetching application:', err);
         setIsLoading(false);
         // On error, assume new application
-        setStatus('New');
+        setStatus('new');
       });
   }, [user?.id, navigate]); // Only depend on user.id, not entire user object
 
@@ -397,6 +408,17 @@ export default function Dashboard() {
 
       // Check if submission was successful
       if (response.data && response.data.msg) {
+        // Immediately update status to prevent form from showing
+        setStatus('submitted');
+        setApplication(response.data.application || null);
+        
+        // Clear form data to ensure dashboard view
+        setAppData({
+          fullName: '', hostel: '', department: '', programme: '', dob: '', age: '', gender: '',
+          studyType: '', level: '', phone: '',
+          secondaryTeam: '', essayWhy: '', essaySkills: '', terms: false
+        });
+        
         // Additional delay before redirect for smooth transition
         await new Promise(resolve => setTimeout(resolve, 800));
         navigate('/success');
@@ -430,41 +452,58 @@ export default function Dashboard() {
   const getStepClass = (s) => `step-circle ${step >= s ? 'active' : ''}`;
 
   const getStatusBadge = (status) => {
+    const normalized = normalizeStatus(status);
     const badges = {
       'submitted': { class: 'bg-info', text: 'Submitted' },
       'interview': { class: 'bg-warning', text: 'Pending Interview' },
       'recruited': { class: 'bg-success', text: 'Recruited' },
       'declined': { class: 'bg-danger', text: 'Declined' }
     };
-    return badges[status] || { class: 'bg-secondary', text: status || 'New' };
+    return badges[normalized] || { class: 'bg-secondary', text: normalized || 'New' };
   };
 
   const getStatusMessage = (status) => {
+    const normalized = normalizeStatus(status);
     const messages = {
       'submitted': 'Your application has been received and is under review. We will contact you via email if you are selected for the next stage.',
       'interview': 'Congratulations! Your application has been moved to the interview stage. We will contact you soon with interview details.',
       'recruited': 'Congratulations! You have been officially recruited into Enactus UTAS. Welcome to the team!',
       'declined': 'Thank you for your interest in joining Enactus UTAS. Unfortunately, we are not proceeding with your application at this time.'
     };
-    return messages[status] || 'Your application is being processed.';
+    return messages[normalized] || 'Your application is being processed.';
   };
 
-  // If application is submitted, show dashboard view (only for submitted/recruited/declined statuses)
-  // Keep form editable for 'New' and 'draft' statuses
-  // Check status first - if submitted, show dashboard regardless of application state
-  // IMPORTANT: Check status BEFORE loading check to ensure dashboard shows immediately
-  if (status === 'submitted' || status === 'recruited' || status === 'declined' || status === 'interview') {
-    // Show loading only if we don't have application data yet
-    if (isLoading && !application) {
-      return (
-        <div className="container mt-5">
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
+  // CRITICAL: Show loading state until we know the actual status
+  // This prevents the form from flashing before we know if application is submitted
+  if (isLoading) {
+    return (
+      <div className="container mt-5">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
+          <p className="mt-3 text-muted">Loading your application...</p>
         </div>
-      );
+      </div>
+    );
+  }
+
+  // If application is submitted, show dashboard view (only for submitted/recruited/declined statuses)
+  // Keep form editable for 'new' and 'draft' statuses
+  // Check status first - if submitted, show dashboard regardless of application state
+  // IMPORTANT: Normalize status and check BEFORE rendering form
+  const normalizedStatus = normalizeStatus(status);
+  if (isSubmittedStatus(normalizedStatus)) {
+    // If we don't have application data yet but status is submitted, fetch it
+    if (!application && user?.id) {
+      // This should not happen, but as a safety measure, fetch the data
+      axios.get(`${API_URL}/api/application/${user.id}`)
+        .then(res => {
+          if (res.data) {
+            setApplication(res.data);
+          }
+        })
+        .catch(err => console.error('Error fetching application data:', err));
     }
     const statusBadge = getStatusBadge(status);
     
@@ -487,9 +526,9 @@ export default function Dashboard() {
             </div>
 
             {/* Status Alert */}
-            <div className={`alert alert-${status === 'recruited' ? 'success' : status === 'declined' ? 'danger' : 'info'} mb-4`}>
+            <div className={`alert alert-${normalizedStatus === 'recruited' ? 'success' : normalizedStatus === 'declined' ? 'danger' : 'info'} mb-4`}>
               <h5 className="alert-heading">Application Status</h5>
-              <p className="mb-0">{getStatusMessage(status)}</p>
+              <p className="mb-0">{getStatusMessage(normalizedStatus)}</p>
             </div>
 
             {/* Application Details Card */}
@@ -586,7 +625,7 @@ export default function Dashboard() {
                   <h5 style={{color: '#800000'}}>Application Progress</h5>
                   <div className="mt-3">
                     <div className="d-flex align-items-center mb-3">
-                      <div className={`rounded-circle d-flex align-items-center justify-content-center me-3 ${status === 'submitted' || status === 'interview' || status === 'recruited' || status === 'declined' ? 'bg-success' : 'bg-secondary'}`} style={{width: '40px', height: '40px', color: 'white', fontWeight: 'bold'}}>
+                      <div className={`rounded-circle d-flex align-items-center justify-content-center me-3 ${isSubmittedStatus(normalizedStatus) ? 'bg-success' : 'bg-secondary'}`} style={{width: '40px', height: '40px', color: 'white', fontWeight: 'bold'}}>
                         ✓
                       </div>
                       <div className="flex-grow-1">
@@ -597,7 +636,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     
-                    {status === 'interview' && (
+                    {normalizedStatus === 'interview' && (
                       <div className="d-flex align-items-center mb-3">
                         <div className="rounded-circle d-flex align-items-center justify-content-center me-3 bg-warning" style={{width: '40px', height: '40px', color: 'white', fontWeight: 'bold'}}>
                           ⏳
@@ -609,15 +648,15 @@ export default function Dashboard() {
                       </div>
                     )}
                     
-                    {(status === 'recruited' || status === 'declined') && (
+                    {(normalizedStatus === 'recruited' || normalizedStatus === 'declined') && (
                       <div className="d-flex align-items-center mb-3">
-                        <div className={`rounded-circle d-flex align-items-center justify-content-center me-3 ${status === 'recruited' ? 'bg-success' : 'bg-danger'}`} style={{width: '40px', height: '40px', color: 'white', fontWeight: 'bold'}}>
-                          {status === 'recruited' ? '✓' : '✗'}
+                        <div className={`rounded-circle d-flex align-items-center justify-content-center me-3 ${normalizedStatus === 'recruited' ? 'bg-success' : 'bg-danger'}`} style={{width: '40px', height: '40px', color: 'white', fontWeight: 'bold'}}>
+                          {normalizedStatus === 'recruited' ? '✓' : '✗'}
                         </div>
                         <div className="flex-grow-1">
-                          <strong>{status === 'recruited' ? 'Recruited' : 'Decision Made'}</strong>
+                          <strong>{normalizedStatus === 'recruited' ? 'Recruited' : 'Decision Made'}</strong>
                           <div className="text-muted small">
-                            {status === 'recruited' ? 'Congratulations! Welcome to the team!' : 'Thank you for your interest'}
+                            {normalizedStatus === 'recruited' ? 'Congratulations! Welcome to the team!' : 'Thank you for your interest'}
                           </div>
                         </div>
                       </div>
@@ -651,22 +690,22 @@ export default function Dashboard() {
                   <h5 style={{color: '#800000'}}>Important Information</h5>
                   <div className="alert alert-info">
                     <h6 className="alert-heading"><i className="bi bi-info-circle-fill me-2"></i>What's Next?</h6>
-                    {status === 'submitted' && (
+                    {normalizedStatus === 'submitted' && (
                       <p className="mb-0 small">
                         Your application has been received and is under review. We will contact you via email or phone if you're selected for the next stage. Please check this dashboard regularly for updates.
                       </p>
                     )}
-                    {status === 'interview' && (
+                    {normalizedStatus === 'interview' && (
                       <p className="mb-0 small">
                         <strong>Interview Stage:</strong> You will be contacted soon with interview details. Please ensure your contact information is up to date.
                       </p>
                     )}
-                    {status === 'recruited' && (
+                    {normalizedStatus === 'recruited' && (
                       <p className="mb-0 small">
                         <strong>Welcome to Enactus UTAS!</strong> You will receive further instructions via email. Congratulations on joining our team!
                       </p>
                     )}
-                    {status === 'declined' && (
+                    {normalizedStatus === 'declined' && (
                       <p className="mb-0 small">
                         Thank you for your interest in Enactus UTAS. We encourage you to apply again in the future.
                       </p>
@@ -767,7 +806,7 @@ export default function Dashboard() {
 
             <div className="p-3 p-md-5">
               {/* Auto-save indicator */}
-              {status !== 'submitted' && status !== 'recruited' && status !== 'declined' && (
+              {!isSubmittedStatus(status) && (
                 <div className="d-flex justify-content-end mb-3">
                   {isSaving ? (
                     <small className="text-muted">
