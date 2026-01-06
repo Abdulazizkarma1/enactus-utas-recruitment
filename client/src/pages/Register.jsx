@@ -91,6 +91,10 @@ export default function Register() {
       // Store student ID for pre-population in application form
       localStorage.setItem('registeredStudentId', accountData.studentId.trim());
       
+      // Clear any previous messages and errors
+      setSuccessMessage('');
+      setErrors({});
+      
       // Show success step instead of redirecting immediately
       setRegistrationSuccess(true);
       setStep(3); // Move to success step
