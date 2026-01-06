@@ -800,6 +800,15 @@ export default function Dashboard() {
                   <div className="row">
                     <div className="col-md-6">
                         <FormField 
+                            label="Student ID" 
+                            value={user?.studentId || ''} 
+                            disabled
+                            tooltipText="Your Student ID from your account registration."
+                            guideText="This is automatically filled from your account"
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <FormField 
                             label="Full Name" 
                             value={appData.fullName} 
                             onChange={e => {
@@ -1180,4 +1189,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
 

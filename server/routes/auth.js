@@ -21,8 +21,13 @@ router.post('/register', async (req, res) => {
         }
 
         // Validate password length
-        if (password.length < 6) {
-            return res.status(400).json({ msg: "Password must be at least 6 characters long" });
+        if (password.length < 8) {
+            return res.status(400).json({ msg: "Password must be at least 8 characters long" });
+        }
+
+        // Validate student ID format (11 digits)
+        if (!/^\d{11}$/.test(studentId.trim())) {
+            return res.status(400).json({ msg: "Student ID must be exactly 11 digits" });
         }
 
         // 1. Validate Voucher
@@ -88,5 +93,34 @@ router.post('/login', async (req, res) => {
     }
 });
 
+
+// Validate Voucher (without registration)
+router.post('/validate-voucher', async (req, res) => {
+    try {
+        const { serial, pin } = req.body;
+
+        if (!serial || !pin) {
+            return res.status(400).json({ msg: "Serial Number and PIN are required" });
+        }
+
+        const voucher = await Voucher.findOne({ 
+            serialNumber: serial.trim(), 
+            pin: pin.trim() 
+        });
+
+        if (!voucher) {
+            return res.status(400).json({ msg: "Invalid Voucher Serial Number or PIN" });
+        }
+
+        if (voucher.isUsed) {
+            return res.status(400).json({ msg: "This voucher has already been used" });
+        }
+
+        res.json({ msg: "Voucher is valid", valid: true });
+    } catch (err) {
+        console.error('Voucher validation error:', err);
+        res.status(500).json({ msg: err.message || "Server error during validation" });
+    }
+});
 
 module.exports = router;
