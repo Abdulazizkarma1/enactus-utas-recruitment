@@ -346,6 +346,7 @@ export default function Dashboard() {
       if (step === 1) isValid = validateStep1();
       else if (step === 2) isValid = validateStep2();
       else if (step === 3) isValid = validateStep3();
+      else if (step === 4) isValid = validateStep4();
       
       if (!isValid) {
         alert('Please fix the errors before continuing');
@@ -366,7 +367,7 @@ export default function Dashboard() {
 
     // Final validation
     if (!validateStep1() || !validateStep2() || !validateStep3() || !validateStep4()) {
-      setStep(4); // Go to final step to show errors
+      setStep(5); // Go to review step to show errors
       alert('Please fix all errors before submitting');
       return;
     }
@@ -800,7 +801,11 @@ export default function Dashboard() {
               </div>
               <div className="text-center">
                 <div className={getStepClass(4)}>4</div>
-                <div className="step-label">Finish</div>
+                <div className="step-label">Documents</div>
+              </div>
+              <div className="text-center">
+                <div className={getStepClass(5)}>5</div>
+                <div className="step-label">Review</div>
               </div>
             </div>
 
@@ -1120,7 +1125,7 @@ export default function Dashboard() {
 
               {step === 4 && (
                 <div className="animate-fade-in animate-slide-in">
-                  <h4 className="mb-4" style={{color: '#800000'}}>Final Steps</h4>
+                  <h4 className="mb-4" style={{color: '#800000'}}>Upload Documents</h4>
                   
                   <div className="alert alert-warning mb-4">
                     <h6 className="alert-heading"><i className="bi bi-file-earmark-check-fill me-2"></i>Document Upload Requirements</h6>
@@ -1211,13 +1216,227 @@ export default function Dashboard() {
                       <button className="btn btn-light order-2 order-md-1" onClick={() => handleStepChange(3)} disabled={isSubmitting}>&larr; Back</button>
                       <button 
                         className="btn btn-enactus order-1 order-md-2" 
-                        onClick={handleSubmit}
+                        onClick={() => handleStepChange(5)}
                         disabled={isSubmitting}
                         style={{flex: '1', maxWidth: '100%'}}
                       >
-                        {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                        Review Application →
                       </button>
-                   </div>
+                    </div>
+                </div>
+              )}
+
+              {/* Step 5: Review & Submit */}
+              {step === 5 && (
+                <div className="animate-fade-in animate-slide-in">
+                  <h4 className="mb-4" style={{color: '#800000'}}>Review Your Application</h4>
+                  
+                  <div className="alert alert-info mb-4">
+                    <h6 className="alert-heading"><i className="bi bi-info-circle-fill me-2"></i>Please Review Carefully</h6>
+                    <p className="mb-0 small">Review all information below before submitting. Once submitted, you cannot edit your application.</p>
+                  </div>
+
+                  {/* Personal Information Review */}
+                  <div className="card mb-4">
+                    <div className="card-header bg-light">
+                      <h5 className="mb-0"><i className="bi bi-person-fill me-2"></i>Personal Information</h5>
+                    </div>
+                    <div className="card-body">
+                      <div className="row">
+                        <div className="col-md-6 mb-3">
+                          <strong>Full Name:</strong>
+                          <p className="mb-0">{appData.fullName || <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Student ID:</strong>
+                          <p className="mb-0">{user?.studentId || <span className="text-muted">Not available</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Phone Number:</strong>
+                          <p className="mb-0">{appData.phone || <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Email:</strong>
+                          <p className="mb-0">{user?.email || <span className="text-muted">Not available</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Department:</strong>
+                          <p className="mb-0">{appData.department || <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Programme:</strong>
+                          <p className="mb-0">{appData.programme || <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Hostel/Residence:</strong>
+                          <p className="mb-0">{appData.hostel || <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Date of Birth:</strong>
+                          <p className="mb-0">{appData.dob ? new Date(appData.dob).toLocaleDateString() : <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Age:</strong>
+                          <p className="mb-0">{appData.age || <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Gender:</strong>
+                          <p className="mb-0">{appData.gender || <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>Study Type:</strong>
+                          <p className="mb-0">{appData.studyType || <span className="text-muted">Not provided</span>}</p>
+                        </div>
+                        {appData.studyType === 'Undergraduate' && (
+                          <div className="col-md-6 mb-3">
+                            <strong>Level:</strong>
+                            <p className="mb-0">{appData.level || <span className="text-muted">Not provided</span>}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Team Selection Review */}
+                  <div className="card mb-4">
+                    <div className="card-header bg-light">
+                      <h5 className="mb-0"><i className="bi bi-people-fill me-2"></i>Team Selection</h5>
+                    </div>
+                    <div className="card-body">
+                      <div className="mb-2">
+                        <strong>Primary Team:</strong>
+                        <p className="mb-0"><span className="badge bg-primary">Field Work Team (Mandatory)</span></p>
+                      </div>
+                      {appData.secondaryTeam && (
+                        <div>
+                          <strong>Secondary Team:</strong>
+                          <p className="mb-0"><span className="badge bg-warning">{appData.secondaryTeam}</span></p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Essays Review */}
+                  <div className="card mb-4">
+                    <div className="card-header bg-light">
+                      <h5 className="mb-0"><i className="bi bi-file-text-fill me-2"></i>Essay Responses</h5>
+                    </div>
+                    <div className="card-body">
+                      <div className="mb-3">
+                        <strong>Why do you want to join Enactus UTAS?</strong>
+                        <p className="mb-0 mt-2" style={{whiteSpace: 'pre-wrap', minHeight: '50px', padding: '10px', background: '#f8f9fa', borderRadius: '4px'}}>
+                          {appData.essayWhy || <span className="text-muted">Not provided</span>}
+                        </p>
+                      </div>
+                      <div>
+                        <strong>What skills and experiences do you bring?</strong>
+                        <p className="mb-0 mt-2" style={{whiteSpace: 'pre-wrap', minHeight: '50px', padding: '10px', background: '#f8f9fa', borderRadius: '4px'}}>
+                          {appData.essaySkills || <span className="text-muted">Not provided</span>}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Documents Review */}
+                  <div className="card mb-4">
+                    <div className="card-header bg-light">
+                      <h5 className="mb-0"><i className="bi bi-file-earmark-fill me-2"></i>Uploaded Documents</h5>
+                    </div>
+                    <div className="card-body">
+                      <div className="row">
+                        <div className="col-md-6 mb-3">
+                          <strong>Profile Picture:</strong>
+                          {files.profilePic ? (
+                            <div className="mt-2">
+                              <div className="alert alert-success py-2 px-3 mb-2">
+                                <i className="bi bi-check-circle-fill me-2"></i>
+                                {files.profilePic.name} ({(files.profilePic.size / 1024).toFixed(1)} KB)
+                              </div>
+                              {files.profilePic.type.startsWith('image/') && (
+                                <img 
+                                  src={URL.createObjectURL(files.profilePic)} 
+                                  alt="Profile Preview" 
+                                  className="img-thumbnail"
+                                  style={{maxWidth: '150px', maxHeight: '150px', objectFit: 'cover'}}
+                                />
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-danger mt-2"><i className="bi bi-exclamation-triangle-fill me-1"></i>Not uploaded</p>
+                          )}
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <strong>CV/Resume:</strong>
+                          {files.cv ? (
+                            <div className="mt-2">
+                              <div className="alert alert-success py-2 px-3">
+                                <i className="bi bi-check-circle-fill me-2"></i>
+                                {files.cv.name} ({(files.cv.size / 1024).toFixed(1)} KB)
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-danger mt-2"><i className="bi bi-exclamation-triangle-fill me-1"></i>Not uploaded</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Terms Confirmation */}
+                  <div className="card mb-4">
+                    <div className="card-body">
+                      <div className={`form-check ${errors.terms ? 'border border-danger rounded p-3' : ''}`}>
+                        <input 
+                          className={`form-check-input ${errors.terms ? 'is-invalid' : ''}`} 
+                          type="checkbox" 
+                          id="termsReview" 
+                          onChange={e => {
+                            setAppData({...appData, terms: e.target.checked});
+                            if (errors.terms) setErrors({...errors, terms: null});
+                          }}
+                          checked={appData.terms}
+                        />
+                        <label className="form-check-label" htmlFor="termsReview">
+                          I confirm that all information provided is accurate and complete. I understand that once submitted, I cannot edit my application.
+                        </label>
+                        {errors.terms && (
+                          <div className="invalid-feedback d-block">
+                            <i className="bi bi-exclamation-triangle-fill me-1"></i>
+                            {errors.terms}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="alert alert-warning">
+                    <h6 className="alert-heading"><i className="bi bi-exclamation-triangle-fill me-2"></i>Final Confirmation</h6>
+                    <p className="mb-0 small">By clicking "Submit Application", you confirm that all information is correct and you agree to the terms and conditions. This action cannot be undone.</p>
+                  </div>
+
+                  <div className="d-flex flex-column flex-md-row justify-content-between gap-2 mt-5">
+                      <button className="btn btn-light order-2 order-md-1" onClick={() => handleStepChange(4)} disabled={isSubmitting}>
+                        <i className="bi bi-arrow-left me-2"></i>Back to Documents
+                      </button>
+                      <button 
+                        className="btn btn-enactus order-1 order-md-2" 
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || !appData.terms}
+                        style={{flex: '1', maxWidth: '100%'}}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <i className="bi bi-check-circle-fill me-2"></i>
+                            Submit Application
+                          </>
+                        )}
+                      </button>
+                    </div>
                 </div>
               )}
 
