@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Application = require('../models/Application');
+const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -29,6 +30,16 @@ router.post('/submit', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), 
         // Validate required fields
         if (!userId) {
             return res.status(400).json({ msg: "User ID is required" });
+        }
+        
+        // Validate userId is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ msg: "Invalid User ID format" });
+        }
+        
+        // Validate userId is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ msg: "Invalid User ID format" });
         }
         if (!fullName || !hostel || !department || !secondaryTeam || !essayWhy || !essaySkills) {
             return res.status(400).json({ msg: "All required fields must be filled" });
@@ -92,6 +103,11 @@ router.post('/draft', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), a
         if (!userId) {
             return res.status(400).json({ msg: "User ID is required" });
         }
+        
+        // Validate userId is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ msg: "Invalid User ID format" });
+        }
 
         const updateData = {
             user: userId,
@@ -140,9 +156,22 @@ router.post('/draft', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), a
 // Get My Application
 router.get('/:userId', async (req, res) => {
     try {
+        // Validate userId is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.userId)) {
+            return res.status(400).json({ msg: "Invalid User ID format" });
+        }
+        
         const app = await Application.findOne({ user: req.params.userId });
+        // Return null explicitly if no application found (instead of undefined)
+        // This ensures frontend receives a predictable response
+        if (!app) {
+            return res.json(null);
+        }
         res.json(app);
-    } catch (err) { res.status(500).json(err); }
+    } catch (err) {
+        console.error('Error fetching application:', err);
+        res.status(500).json({ msg: err.message || "Error fetching application" });
+    }
 });
 
 module.exports = router;

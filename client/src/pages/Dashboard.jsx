@@ -169,9 +169,11 @@ export default function Dashboard() {
       const normalizedCached = normalizeStatus(cachedStatus);
       console.log('[Dashboard] Using cached status from login:', normalizedCached);
       
-      // If status is submitted, set it immediately to show dashboard view
+      // If status is submitted, set it immediately to show dashboard view (prevents form flash)
+      // For 'new' or 'draft', wait for API call to load form data
       if (isSubmittedStatus(normalizedCached)) {
         setStatus(normalizedCached);
+        // Don't set loading to false yet - still need to fetch application data for dashboard display
       }
     }
 
@@ -239,11 +241,22 @@ export default function Dashboard() {
       .catch(err => {
         console.error('[Dashboard] Error fetching application:', err);
         setIsLoading(false);
-        // On error, check cached status, otherwise assume new application
+        // On error, check cached status to maintain state consistency
+        // If we have a valid cached status, use it (especially if submitted)
         const cachedStatus = localStorage.getItem('applicationStatus');
-        if (cachedStatus && isSubmittedStatus(normalizeStatus(cachedStatus))) {
-          setStatus(normalizeStatus(cachedStatus));
+        if (cachedStatus) {
+          const normalizedCached = normalizeStatus(cachedStatus);
+          if (isSubmittedStatus(normalizedCached)) {
+            // Use cached submitted status - user has already submitted
+            setStatus(normalizedCached);
+            console.log('[Dashboard] Using cached submitted status after API error');
+          } else {
+            // Cached status is 'new' or 'draft' - allow user to continue filling form
+            setStatus(normalizedCached);
+            console.log('[Dashboard] Using cached draft/new status after API error');
+          }
         } else {
+          // No cached status - assume new application
           setStatus('new');
           localStorage.removeItem('applicationStatus');
         }
