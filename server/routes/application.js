@@ -71,7 +71,13 @@ router.post('/submit', upload.fields([{ name: 'profilePic' }, { name: 'cv' }]), 
             { new: true, upsert: true }
         );
 
-        res.json({ msg: "Application submitted successfully", application: app });
+        // CRITICAL: Return the application with status to ensure frontend updates immediately
+        // Status is guaranteed to be 'submitted' from updateData above
+        res.json({ 
+            msg: "Application submitted successfully", 
+            application: app,
+            status: app.status // Explicitly return status
+        });
     } catch (err) {
         console.error('Application submission error:', err);
         res.status(500).json({ msg: err.message || "Error submitting application" });

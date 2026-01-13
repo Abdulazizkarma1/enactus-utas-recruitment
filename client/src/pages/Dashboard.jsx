@@ -162,6 +162,19 @@ export default function Dashboard() {
       return;
     }
 
+    // CRITICAL: Check application status from localStorage first (from login response)
+    // This provides immediate status check before API call completes
+    const cachedStatus = localStorage.getItem('applicationStatus');
+    if (cachedStatus) {
+      const normalizedCached = normalizeStatus(cachedStatus);
+      console.log('[Dashboard] Using cached status from login:', normalizedCached);
+      
+      // If status is submitted, set it immediately to show dashboard view
+      if (isSubmittedStatus(normalizedCached)) {
+        setStatus(normalizedCached);
+      }
+    }
+
     // Always fetch fresh data when component mounts or user changes
     // This ensures we get the latest status from the server
     setIsLoading(true);
@@ -177,6 +190,9 @@ export default function Dashboard() {
           // Set status IMMEDIATELY - this is the most important step
           setStatus(appStatus);
           setApplication(res.data);
+          
+          // Update localStorage with fresh status from server
+          localStorage.setItem('applicationStatus', appStatus);
           
           // Only set form data if status is 'new' or 'draft' (editable)
           // If submitted, don't load form data - user should see dashboard
@@ -216,14 +232,21 @@ export default function Dashboard() {
           // No application exists - user can start filling the form
           console.log('[Dashboard] No application found, setting status to new');
           setStatus('new');
+          localStorage.removeItem('applicationStatus'); // Clear cached status
         }
         setIsLoading(false);
       })
       .catch(err => {
         console.error('[Dashboard] Error fetching application:', err);
         setIsLoading(false);
-        // On error, assume new application
-        setStatus('new');
+        // On error, check cached status, otherwise assume new application
+        const cachedStatus = localStorage.getItem('applicationStatus');
+        if (cachedStatus && isSubmittedStatus(normalizeStatus(cachedStatus))) {
+          setStatus(normalizeStatus(cachedStatus));
+        } else {
+          setStatus('new');
+          localStorage.removeItem('applicationStatus');
+        }
       });
   }, [user?.id, navigate]); // Only depend on user.id, not entire user object
 
@@ -417,10 +440,14 @@ export default function Dashboard() {
       if (response.data && response.data.msg) {
         // CRITICAL: Immediately update status to prevent form from showing
         // This must happen BEFORE any navigation or delay
-        const submittedStatus = normalizeStatus(response.data.application?.status || 'submitted');
+        const submittedStatus = normalizeStatus(response.data.application?.status || response.data.status || 'submitted');
         console.log('[Dashboard] Submission successful, setting status to:', submittedStatus);
         setStatus(submittedStatus);
         setApplication(response.data.application || null);
+        
+        // CRITICAL: Update localStorage immediately with submitted status
+        // This ensures next login will show dashboard, not form
+        localStorage.setItem('applicationStatus', submittedStatus);
         
         // Clear form data to ensure dashboard view
         setAppData({

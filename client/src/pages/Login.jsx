@@ -40,6 +40,14 @@ export default function Login() {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       
+      // CRITICAL: Store application status from login response
+      // This allows Dashboard to check status immediately without waiting for API call
+      if (res.data.applicationStatus) {
+        localStorage.setItem('applicationStatus', res.data.applicationStatus);
+      } else {
+        localStorage.removeItem('applicationStatus'); // Clear if no application
+      }
+      
       // Show success message
       alert('✅ Successfully logged in!');
       
