@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const User = require('../models/User');
 const Voucher = require('../models/Voucher');
+const Application = require('../models/Application');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -85,8 +86,29 @@ router.post('/login', async (req, res) => {
         const validPass = await bcrypt.compare(password, user.password);
         if (!validPass) return res.status(400).json({ msg: "Invalid password" });
 
+        // CRITICAL: Query Application collection to get actual status
+        // Do not rely on User model flags - always check Application collection
+        let applicationStatus = null;
+        try {
+            const application = await Application.findOne({ user: user._id });
+            if (application && application.status) {
+                applicationStatus = application.status;
+            }
+        } catch (appErr) {
+            console.error('Error fetching application status during login:', appErr);
+            // Continue with login even if application fetch fails
+        }
+
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET);
-        res.json({ token, user: { id: user._id, studentId: user.studentId, role: user.role } });
+        res.json({ 
+            token, 
+            user: { 
+                id: user._id, 
+                studentId: user.studentId, 
+                role: user.role 
+            },
+            applicationStatus: applicationStatus // Include application status in login response
+        });
     } catch (err) { 
         console.error('Login error:', err);
         res.status(500).json({ msg: err.message || "Server error during login" }); 
