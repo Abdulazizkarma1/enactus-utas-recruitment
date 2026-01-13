@@ -145,4 +145,61 @@ router.post('/validate-voucher', async (req, res) => {
     }
 });
 
+// Get Current User with Application Status
+// This endpoint requires authentication via token
+router.get('/get-current-user', async (req, res) => {
+    try {
+        // Extract token from Authorization header
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ msg: "No token provided, authorization denied" });
+        }
+
+        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Find user by ID from token
+        const user = await User.findById(decoded.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+
+        // CRITICAL: Query Application collection to get actual status
+        // Do not rely on User model flags - always check Application collection
+        let applicationStatus = null;
+        let application = null;
+        try {
+            application = await Application.findOne({ user: user._id });
+            if (application && application.status) {
+                applicationStatus = application.status;
+            }
+        } catch (appErr) {
+            console.error('Error fetching application status:', appErr);
+            // Continue even if application fetch fails
+        }
+
+        res.json({
+            user: {
+                id: user._id,
+                studentId: user.studentId,
+                email: user.email,
+                role: user.role
+            },
+            applicationStatus: applicationStatus,
+            application: application // Include full application if exists
+        });
+    } catch (err) {
+        console.error('Get current user error:', err);
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(401).json({ msg: "Invalid token" });
+        }
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ msg: "Token expired" });
+        }
+        res.status(500).json({ msg: err.message || "Server error" });
+    }
+});
+
 module.exports = router;
